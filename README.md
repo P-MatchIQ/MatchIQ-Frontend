@@ -23,3 +23,16 @@ Plataforma inteligente de matching entre empresas y candidatos.
 ```bash
 pip install -r requirements.txt
 uvicorn main:app --reload
+
+
+🔐 Auth
+
+JWT + Roles
+
+📌 Flujo DevOps
+
+Issue → Branch → Commit → PR → Review → Tests → Merge develop → Release → main → Deploy
+
+🧠 Arquitectura lógica
+
+Frontend → API Gateway → Auth → Services → AI Engine → DB
