@@ -14,16 +14,10 @@ Plataforma inteligente de matching entre empresas y candidatos.
 - Feedback
 
 ## 🏗️ Arquitectura
-- Backend: FastAPI
-- Frontend: Angular
+- Backend: Express
+- Frontend: JS
 - DB: PostgreSQL
 - IA: OpenAI
-
-## ⚙️ Setup
-```bash
-pip install -r requirements.txt
-uvicorn main:app --reload
-
 
 🔐 Auth
 
