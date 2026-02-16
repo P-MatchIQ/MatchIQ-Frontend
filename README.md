@@ -84,20 +84,20 @@ Frontend → API Express → Auth → Services → AI Engine → Database
 
 ## Modelo de datos (flujo de relaciones)
 
-usuario
-├─ perfil_empresa
-│    └─ ofertas
-│         ├─ oferta_skill
-│         ├─ match
-│         ├─ tests
-│         │    └─ test_envio
-│         │          └─ test_respuesta
-│         │                └─ evaluacion_ia
-│         └─ seleccion_final
+usuario<br>
+├─ perfil_empresa<br>
+│    |─ ofertas<br>
+│    |     ├─ oferta_skill<br>
+│    |     ├─ match<br>
+│    |     ├─ tests<br>
+│    |     │    └─ test_envio<br>
+│    |     │          └─ test_respuesta<br>
+│    |     │                └─ evaluacion_ia<br>
+│    |     └─ seleccion_final<br>
 │
-└─ perfil_candidato
-├─ candidato_skill
-├─ match
+└─ perfil_candidato<br>
+├─ candidato_skill<br>
+├─ match<br>
 └─ test_envio
 
 ---
