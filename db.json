@@ -1,0 +1,7 @@
+{
+  "users": [
+    { "id": 1, "email": "admin@matchiq.com", "password": "1234", "role": "admin" },
+    { "id": 2, "email": "company@matchiq.com", "password": "1234", "role": "company" },
+    { "id": 3, "email": "candidate@matchiq.com", "password": "1234", "role": "candidate" }
+  ]
+}
