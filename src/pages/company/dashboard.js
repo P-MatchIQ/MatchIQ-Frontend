@@ -1,0 +1,83 @@
+// ── Dashboard View Logic ────────────────────────────────────────
+// Renderiza KPIs y tabla de ofertas recientes.
+
+import { getOffers } from '../../api/offersApi.js';
+import { showOfferModal } from './app.js';
+
+const MODALITY_LABELS = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'Onsite' };
+
+const STATUS_PILLS = {
+    active: '<span class="pill pill--active">Active</span>',
+    closed: '<span class="pill pill--closed">Closed</span>',
+    cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
+};
+
+/**
+ * Inicializa la vista del Dashboard.
+ */
+export async function initDashboard() {
+    const offers = await getOffers();
+
+    const active = offers.filter(o => o.status === 'active').length;
+    const closed = offers.filter(o => o.status === 'closed').length;
+    const total = offers.length;
+
+    // KPIs
+    setText('kpi-active', active);
+    setText('kpi-total', total);
+    setText('kpi-closed', closed);
+
+    // Tabla — últimas 5 ofertas
+    const tbody = document.getElementById('dashboard-table-body');
+    if (!tbody) return;
+
+    const recent = offers.slice(-5).reverse();
+
+    if (recent.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align:center; padding:40px; color: var(--text-600);">
+                    No offers yet. <a href="#/offers/create" class="link">Create your first offer →</a>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = recent.map(o => `
+        <tr class="offer-row" data-id="${o.id}" style="cursor: pointer;">
+            <td>
+                <div class="job__title" style="color: var(--primary-600); font-weight: 600;">${esc(o.title)}</div>
+                <div class="job__meta">${(o.categories || []).join(', ')}</div>
+            </td>
+            <td>${MODALITY_LABELS[o.modality] || '—'}</td>
+            <td>${STATUS_PILLS[o.status] || o.status}</td>
+            <td class="td-right">
+                <a href="#/offers/edit/${o.id}" class="link" onclick="event.stopPropagation()">Edit</a>
+            </td>
+        </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.offer-row').forEach(row => {
+        row.addEventListener('click', () => {
+            const rowId = row.dataset.id;
+            const offer = recent.find(o => String(o.id) === String(rowId));
+            if (!offer) return;
+
+            const actions = `<a href="#/offers/edit/${offer.id}" class="btn btn--primary">Edit</a>`;
+            showOfferModal(offer, actions);
+        });
+    });
+}
+
+/* ── Helpers ───────────────────────────────────────────────────── */
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+}
