@@ -33,31 +33,23 @@ export async function authLogin({ email, password, remember }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
 
-  const users = await apiFetch(
-    `/users?email=${encodeURIComponent(normalizedEmail)}`,
-    { method: "GET" }
+  // POST al endpoint /login del backend
+  const response = await apiFetch(
+    "/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: normalizedEmail,
+        password: normalizedPassword,
+      }),
+    }
   );
 
-  if (!Array.isArray(users) || users.length === 0) {
-    throw new Error("Invalid credentials.");
-  }
-
-  const user = users[0];
-
-  const dbPass = String(user.password ?? "").trim();
-
-  if (dbPass !== normalizedPassword) {
-    throw new Error("Invalid credentials.");
-  }
-
+  // El backend retorna: { accessToken, refreshToken, user: { id, email, role } }
   const session = {
-    accessToken: generateMockToken(),
-    refreshToken: generateMockToken(),
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role || "candidate",
-    },
+    accessToken: response.accessToken,
+    refreshToken: response.refreshToken,
+    user: response.user,
   };
 
   saveSession(session, !!remember);

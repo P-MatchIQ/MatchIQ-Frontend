@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = "http://localhost:3000"; // json-server
+const DEFAULT_BASE_URL = "http://localhost:3005"; // json-server
 
 export async function apiFetch(path, options = {}) {
   const url = `${DEFAULT_BASE_URL}${path}`;
@@ -8,6 +8,7 @@ export async function apiFetch(path, options = {}) {
   //   credentials: "include"
   // y configura CORS del backend si hay dominios distintos.
   const res = await fetch(url, {
+    credentials: "include",
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
