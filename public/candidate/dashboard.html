@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MatchIQ · Candidate Dashboard</title>
+  <link rel="stylesheet" href="../../src/styles/candidate-dashboard.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img
+          class="brand__logo"
+          src="../../src/assets/iconoMatchIQ-Imag.png"
+          alt="MatchIQ logo"
+        />
+        <div>
+          <h1 class="brand__title">MatchIQ</h1>
+          <p class="brand__subtitle">Smart Connections for Developers</p>
+        </div>
+      </div>
+
+      <nav class="menu">
+        <a class="menu__item menu__item--active" href="./dashboard.html">
+          <span class="menu__icon">▣</span>
+          <span>Dashboard</span>
+        </a>
+
+        <button class="menu__item" id="editProfileBtn" type="button">
+          <span class="menu__icon">✎</span>
+          <span>Edit Profile</span>
+        </button>
+
+        <a class="menu__item" href="#offersSection">
+          <span class="menu__icon">≣</span>
+          <span>Matched Offers</span>
+        </a>
+
+        <button class="menu__item menu__item--danger" id="logoutBtn" type="button">
+          <span class="menu__icon">⇠</span>
+          <span>Logout</span>
+        </button>
+      </nav>
+
+      <div class="sidebar__footer">
+        <p class="sidebar__label">PROFILE STATUS</p>
+        <div class="status-card">
+          <strong id="profileStatusText">Loading...</strong>
+          <span id="availabilityText">Checking availability...</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 class="page-title">Candidate Dashboard</h2>
+          <p class="page-subtitle">
+            Review your profile and explore offers compatible with your skills.
+          </p>
+        </div>
+
+        <div class="topbar__actions">
+          <span class="welcome" id="welcomeText">Welcome</span>
+          <button class="btn btn--primary" id="refreshMatchesBtn" type="button">
+            Refresh Matches
+          </button>
+        </div>
+      </header>
+
+      <section class="summary-grid">
+        <article class="summary-card">
+          <p class="summary-card__label">AVAILABLE OFFERS</p>
+          <h3 class="summary-card__value" id="totalOffersValue">0</h3>
+        </article>
+
+        <article class="summary-card">
+          <p class="summary-card__label">BEST MATCH</p>
+          <h3 class="summary-card__value" id="bestMatchValue">0%</h3>
+        </article>
+
+        <article class="summary-card summary-card--highlight">
+          <p class="summary-card__label">PROFILE COMPLETENESS</p>
+          <h3 class="summary-card__value" id="profileCompletenessValue">0%</h3>
+        </article>
+      </section>
+
+      <section class="panel profile-panel">
+        <div class="panel__head">
+          <div>
+            <h3>Your Profile</h3>
+            <p>Basic information used to generate your ranking opportunities.</p>
+          </div>
+          <button class="btn btn--ghost" id="openProfileEditorBtn" type="button">
+            Edit information
+          </button>
+        </div>
+
+        <div class="alert" id="dashboardAlert" hidden role="alert" aria-live="polite"></div>
+
+        <div class="profile-grid">
+          <div class="profile-item">
+            <span class="profile-item__label">Categories</span>
+            <div class="tags" id="categoriesTags"></div>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-item__label">Skills</span>
+            <div class="tags" id="skillsTags"></div>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-item__label">Experience</span>
+            <strong id="experienceValue">-</strong>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-item__label">English level</span>
+            <strong id="englishValue">-</strong>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-item__label">Seniority</span>
+            <strong id="seniorityValue">-</strong>
+          </div>
+
+          <div class="profile-item">
+            <span class="profile-item__label">Availability</span>
+            <strong id="availabilityValue">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel offers-panel" id="offersSection">
+        <div class="panel__head">
+          <div>
+            <h3>Matched Offers</h3>
+            <p>Offers ordered by compatibility with your profile.</p>
+          </div>
+        </div>
+
+        <div class="offers-toolbar">
+          <input
+            class="search-input"
+            id="offerSearchInput"
+            type="search"
+            placeholder="Search by company, role or skill..."
+          />
+          <select class="select-input" id="workModeFilter">
+            <option value="">All work modes</option>
+            <option value="Remote">Remote</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="On-site">On-site</option>
+          </select>
+        </div>
+
+        <div class="loading-state" id="offersLoading" hidden>Loading compatible offers...</div>
+        <div class="empty-state" id="offersEmpty" hidden>No compatible offers found.</div>
+
+        <div class="offers-list" id="offersList"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="offer-modal" id="offerModal">
+    <div class="offer-modal__content">
+      <div class="offer-modal__head">
+        <div>
+          <h3 id="modalRoleTitle">Offer Detail</h3>
+          <p id="modalCompanyText">Company</p>
+        </div>
+        <button class="modal-close" id="closeOfferModalBtn" type="button">✕</button>
+      </div>
+
+      <div class="modal-meta">
+        <span id="modalMatch"></span>
+        <span id="modalWorkMode"></span>
+        <span id="modalSalary"></span>
+        <span id="modalExperience"></span>
+      </div>
+
+      <div class="modal-block">
+        <h4>Description</h4>
+        <p id="modalDescription">-</p>
+      </div>
+
+      <div class="modal-block">
+        <h4>Required Technologies</h4>
+        <div class="tags" id="modalSkillsTags"></div>
+      </div>
+
+      <div class="modal-block">
+        <h4>Additional Requirements</h4>
+        <ul id="modalRequirementsList"></ul>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="profile-modal" id="profileModal">
+    <form class="profile-form" id="profileForm" method="dialog">
+      <div class="offer-modal__head">
+        <div>
+          <h3>Edit Profile</h3>
+          <p>Update the data used for future matches.</p>
+        </div>
+        <button class="modal-close" id="closeProfileModalBtn" type="button">✕</button>
+      </div>
+
+      <div class="form-grid form-grid--single">
+        <div class="field">
+          <label>Categories</label>
+          <small>Select one or more categories.</small>
+          <div class="picker-grid" id="categoriesPicker"></div>
+        </div>
+
+        <div class="field">
+          <label>Skills</label>
+          <small>Available skills depend on the selected categories.</small>
+          <div class="picker-toolbar">
+            <span class="picker-counter" id="skillsCounter">0 skills selected</span>
+            <button class="mini-link" id="clearSkillsBtn" type="button">Clear skills</button>
+          </div>
+          <div class="picker-grid picker-grid--skills" id="skillsPicker"></div>
+        </div>
+
+        <div class="field-group">
+          <div class="field">
+            <label for="experienceInput">Years of experience</label>
+            <input id="experienceInput" type="number" min="0" placeholder="3" />
+          </div>
+
+          <div class="field">
+            <label for="englishInput">English level</label>
+            <select id="englishInput">
+              <option value="">Select level</option>
+              <option value="A1">A1</option>
+              <option value="A2">A2</option>
+              <option value="B1">B1</option>
+              <option value="B2">B2</option>
+              <option value="C1">C1</option>
+              <option value="C2">C2</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="seniorityInput">Seniority</label>
+            <select id="seniorityInput">
+              <option value="">Select seniority</option>
+              <option value="Junior">Junior</option>
+              <option value="Mid">Mid</option>
+              <option value="Senior">Senior</option>
+            </select>
+          </div>
+
+          <div class="field field--checkbox">
+            <label class="checkbox checkbox--card">
+              <input id="availabilityInput" type="checkbox" />
+              <span>Available for new opportunities</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert" id="profileFormAlert" hidden role="alert" aria-live="polite"></div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" id="cancelProfileBtn" type="button">Cancel</button>
+        <button class="btn btn--primary" id="saveProfileBtn" type="submit">Save profile</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="../../src/pages/candidate/dashboard.js"></script>
+</body>
+</html>
