@@ -26,6 +26,96 @@ function generateMockToken() {
   return `mock_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+
+/** Register Candidate */
+export async function registerCandidate({ email, password, confirmPassword }) {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+  const normalizedPassword = String(password ?? "").trim();
+  const normalizedConfirm = String(confirmPassword ?? "").trim();
+
+  // Validaciones en cliente antes de ir al backend
+  if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
+    throw new Error("All fields are required.");
+  }
+
+  if (normalizedPassword.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+
+  if (normalizedPassword !== normalizedConfirm) {
+    throw new Error("Passwords do not match.");
+  }
+
+    // POST /auth/register/candidate
+  // El backend retorna: { token }
+  const response = await apiFetch("/auth/register/candidate", {
+    method: "POST",
+    body: JSON.stringify({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      confirmPassword: normalizedConfirm,
+    }),
+  });
+
+  // Guardamos sesión automáticamente (el backend ya loguea al registrar)
+  const session = {
+    accessToken: response.token,
+    user: {
+      email: normalizedEmail,
+      role: "candidate",
+    },
+  };
+
+  saveSession(session, true);
+
+  return { user: session.user };
+}
+
+
+/** Register Company */
+export async function registerCompany({ email, password, confirmPassword }) {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+  const normalizedPassword = String(password ?? "").trim();
+  const normalizedConfirm = String(confirmPassword ?? "").trim();
+
+  // Validaciones en cliente antes de ir al backend
+  if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
+    throw new Error("All fields are required.");
+  }
+
+  if (normalizedPassword.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+
+  if (normalizedPassword !== normalizedConfirm) {
+    throw new Error("Passwords do not match.");
+  }
+
+  // POST /auth/register/company
+  // El backend retorna: { token }
+  const response = await apiFetch("/auth/register/company", {
+    method: "POST",
+    body: JSON.stringify({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      confirmPassword: normalizedConfirm,
+    }),
+  });
+
+  // Guardamos sesión automáticamente
+  const session = {
+    accessToken: response.token,
+    user: {
+      email: normalizedEmail,
+      role: "company",
+    },
+  };
+
+  saveSession(session, true);
+
+  return { user: session.user };
+}
+
 /* ============================= */
 /* LOGIN */
 /* ============================= */
