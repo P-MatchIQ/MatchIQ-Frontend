@@ -13,64 +13,73 @@
       <section class="auth">
 
         <div class="auth__head">
-            <img class="brand__logo" src="../src/assets/iconoMatchIQ.png" alt="MatchIQ logo" />
+          <img class="brand__logo" src="../src/assets/iconoMatchIQ.png" alt="MatchIQ logo" />
         </div>
+
+        <!-- Banners de feedback -->
+        <p id="error-banner"   class="banner banner--error"   hidden></p>
+        <p id="success-banner" class="banner banner--success" hidden></p>
 
         <form class="card">
 
-          <!-- LEGAL INFORMATION -->
-            <div class="grid-2">
-              <div class="field">
-                <label>Company Name</label>
-                <input type="text" placeholder="Ex: TechNova Inc." required>
-              </div>
-
-              <div class="field">
-                <label>Tax ID / Business ID</label>
-                <input type="text" placeholder="900.000.000-0" required>
-              </div>
-            </div>
-
-          <div class="divider"></div>
 
           <!-- CORPORATE ACCESS -->
+          <div class="field">
+            <label for="email">Contact Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="hr@company.com"
+              required
+            />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
             <div class="field">
-              <label>Contact Email</label>
-              <input type="email" placeholder="hr@company.com" required>
+              <label for="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
             </div>
-
-            <div class="grid-2">
-              <div class="field">
-                <label>Password</label>
-                <input type="password" placeholder="••••••••" required>
-              </div>
-
-              <div class="field">
-                <label>Confirm Password</label>
-                <input type="password" placeholder="••••••••" required>
-              </div>
-            </div>
+          </div>
 
           <div class="terms">
             <label class="checkbox">
-              <input type="checkbox" required>
+              <input type="checkbox" required />
               <span>
                 I accept
                 <a href="#">the terms and conditions</a>.
               </span>
-              </span>
             </label>
           </div>
 
-          <button class="btn btn--primary">
+          <button class="btn btn--primary" type="submit">
             Create Corporate Account →
           </button>
 
         </form>
 
+        <p class="auth__footer">
+          Already have an account? <a href="./login.html">Sign in</a>
+        </p>
+
       </section>
     </main>
   </div>
+
+  <script type="module" src="../src/pages/registerCompany.js"></script>
 </body>
 </html>

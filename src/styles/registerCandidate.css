@@ -77,6 +77,11 @@ body {
   margin-bottom: 35px;
   font-size: 15px;
 }
+ /**Banners */
+.banner { padding: .75rem 1rem; border-radius: 6px; font-size: .9rem; }
+.banner--error   { background: #fee2e2; color: #b91c1c; }
+.banner--success { background: #dcfce7; color: #15803d; }
+
 
 /* Card */
 .card {
