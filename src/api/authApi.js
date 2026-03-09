@@ -4,7 +4,8 @@ const SESSION_KEY = "matchiq_session_mock";
 
 function loadSession() {
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
+    // Busca primero en localStorage, luego en sessionStorage
+    const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
