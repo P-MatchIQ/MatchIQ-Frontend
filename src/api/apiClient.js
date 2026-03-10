@@ -1,15 +1,22 @@
-const DEFAULT_BASE_URL = "http://localhost:3005"; // json-server
+const DEFAULT_BASE_URL = "http://localhost:3005";
+
+function getToken() {
+  return localStorage.getItem("matchiq_token") || sessionStorage.getItem("matchiq_token");
+}
 
 export async function apiFetch(path, options = {}) {
   const url = `${DEFAULT_BASE_URL}${path}`;
+  const token = getToken();
 
-  // TODO (BACKEND REAL):
-  // Cuando uses cookies httpOnly, agrega:
-  //   credentials: "include"
-  // y configura CORS del backend si hay dominios distintos.
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
   const res = await fetch(url, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    headers,
     ...options,
   });
 

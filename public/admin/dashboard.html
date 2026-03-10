@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatchIQ — Admin Dashboard</title>
+  <link rel="stylesheet" href="../../src/styles/adminDashboard.css" />
+</head>
+<body>
+
+  <!-- ── ASIDE ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">IQ</div>
+      <div>
+        <p class="sidebar__name">MatchIQ</p>
+        <p class="sidebar__sub">Admin Suite</p>
+      </div>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a href="#dashboard" class="sidebar__link sidebar__link--active" data-section="dashboard">
+        <span class="sidebar__icon">📊</span> Dashboard Global
+      </a>
+      <a href="#companies" class="sidebar__link" data-section="companies">
+        <span class="sidebar__icon">🏢</span> Gestión Empresas
+      </a>
+      <a href="#candidates" class="sidebar__link" data-section="candidates">
+        <span class="sidebar__icon">🛡️</span> Control Usuarios
+      </a>
+      <a href="#catalog" class="sidebar__link" data-section="catalog">
+        <span class="sidebar__icon">🗄️</span> Catálogo Tech
+      </a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="sidebar__avatar">AD</div>
+      <div>
+        <p class="sidebar__user">Super Admin</p>
+        <p class="sidebar__role">ROOT ACCESS</p>
+      </div>
+      <button id="logoutBtn" class="sidebar__logout" title="Cerrar sesión">⏻</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- DASHBOARD SECTION -->
+    <section id="section-dashboard" class="section">
+      <div class="section__header">
+        <div>
+          <h1 class="section__title">Rendimiento de Plataforma</h1>
+          <p class="section__sub">Panel Maestro de Control de Negocio</p>
+        </div>
+        <div class="status-badge">
+          <span class="status-badge__dot"></span>
+          <div>
+            <p class="status-badge__label">Estado Sistema</p>
+            <p class="status-badge__value">100% Operativo</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card__icon">🏢</div>
+          <p class="stat-card__label">Empresas Activas</p>
+          <p class="stat-card__value" id="stat-companies">—</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon">👥</div>
+          <p class="stat-card__label">Candidatos Totales</p>
+          <p class="stat-card__value" id="stat-candidates">—</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__icon">⚡</div>
+          <p class="stat-card__label">Matchings Exitosos</p>
+          <p class="stat-card__value" id="stat-matches">—</p>
+        </div>
+      </div>
+
+      <!-- Latest companies -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">Últimas Empresas Registradas</h2>
+          <button class="btn btn--ghost" id="seeAllCompaniesBtn">Ver todas →</button>
+        </div>
+        <table class="table" id="latest-companies-table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Email</th>
+              <th>Ubicación</th>
+              <th>Ofertas</th>
+              <th>Estado</th>
+              <th>Registro</th>
+            </tr>
+          </thead>
+          <tbody id="latest-companies-body">
+            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- COMPANIES SECTION -->
+    <section id="section-companies" class="section section--hidden">
+      <div class="section__header">
+        <div>
+          <h1 class="section__title">Gestión de Empresas</h1>
+          <p class="section__sub">Administra todas las empresas registradas</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="searchCompanies" class="toolbar__search"
+          placeholder="Buscar por nombre o email..." />
+        <select id="sortCompanies" class="toolbar__select">
+          <option value="recent">Más recientes</option>
+          <option value="name">Nombre A-Z</option>
+          <option value="offers">Más ofertas</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Email</th>
+              <th>Ubicación</th>
+              <th>Ofertas</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="companies-body">
+            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CANDIDATES SECTION -->
+    <section id="section-candidates" class="section section--hidden">
+      <div class="section__header">
+        <div>
+          <h1 class="section__title">Control de Usuarios</h1>
+          <p class="section__sub">Administra todos los candidatos registrados</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="searchCandidates" class="toolbar__search"
+          placeholder="Buscar por email..." />
+        <select id="sortCandidates" class="toolbar__select">
+          <option value="recent">Más recientes</option>
+          <option value="seniority">Seniority</option>
+          <option value="experience">Más experiencia</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Seniority</th>
+              <th>Experiencia</th>
+              <th>Inglés</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="candidates-body">
+            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CATALOG SECTION -->
+    <section id="section-catalog" class="section section--hidden">
+      <div class="section__header">
+        <div>
+          <h1 class="section__title">Catálogo de Tecnologías</h1>
+          <p class="section__sub">Gestiona categorías y skills disponibles</p>
+        </div>
+      </div>
+
+      <div class="catalog-grid">
+        <!-- Categorías -->
+        <div class="card">
+          <div class="card__header">
+            <h2 class="card__title">Categorías</h2>
+            <button class="btn btn--primary btn--sm" id="openAddCategoryBtn">+ Nueva</button>
+          </div>
+          <ul class="catalog-list" id="categories-list">
+            <li class="table__empty">Cargando...</li>
+          </ul>
+        </div>
+
+        <!-- Skills -->
+        <div class="card">
+          <div class="card__header">
+            <h2 class="card__title">Skills</h2>
+            <button class="btn btn--primary btn--sm" id="openAddSkillBtn">+ Nuevo</button>
+          </div>
+          <div class="toolbar">
+            <select id="filterSkillsByCategory" class="toolbar__select">
+              <option value="">Todas las categorías</option>
+            </select>
+          </div>
+          <ul class="catalog-list" id="skills-list">
+            <li class="table__empty">Cargando...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── MODALS ─────────────────────────────────────────────────────────── -->
+
+  <!-- Modal: detalle empresa -->
+  <div id="modal-company" class="modal modal--hidden">
+    <div class="modal__box">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-company-name">Empresa</h3>
+        <button class="modal__close" id="closeCompanyModal">✕</button>
+      </div>
+      <div class="modal__body" id="modal-company-body">Cargando...</div>
+      <div class="modal__footer">
+        <button class="btn btn--danger" id="modal-company-toggle-btn">Suspender</button>
+        <button class="btn btn--ghost" id="closeCompanyModal2">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: detalle candidato -->
+  <div id="modal-candidate" class="modal modal--hidden">
+    <div class="modal__box">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modal-candidate-email">Candidato</h3>
+        <button class="modal__close" id="closeCandidateModal">✕</button>
+      </div>
+      <div class="modal__body" id="modal-candidate-body">Cargando...</div>
+      <div class="modal__footer">
+        <button class="btn btn--danger" id="modal-candidate-toggle-btn">Suspender</button>
+        <button class="btn btn--ghost" id="closeCandidateModal2">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: nueva categoría -->
+  <div id="modal-category" class="modal modal--hidden">
+    <div class="modal__box modal__box--sm">
+      <div class="modal__header">
+        <h3 class="modal__title">Nueva Categoría</h3>
+        <button class="modal__close" id="closeCategoryModal">✕</button>
+      </div>
+      <div class="modal__body">
+        <label class="form__label">Nombre de la categoría</label>
+        <input type="text" id="newCategoryName" class="form__input" placeholder="Ej: Web3" />
+        <p id="categoryError" class="form__error" hidden></p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--primary" id="saveCategoryBtn">Guardar</button>
+        <button class="btn btn--ghost" id="closeCategoryModal2">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: nuevo skill -->
+  <div id="modal-skill" class="modal modal--hidden">
+    <div class="modal__box modal__box--sm">
+      <div class="modal__header">
+        <h3 class="modal__title">Nuevo Skill</h3>
+        <button class="modal__close" id="closeSkillModal">✕</button>
+      </div>
+      <div class="modal__body">
+        <label class="form__label">Categoría</label>
+        <select id="newSkillCategory" class="form__input">
+          <option value="">Selecciona una categoría</option>
+        </select>
+        <label class="form__label" style="margin-top:12px">Nombre del skill</label>
+        <input type="text" id="newSkillName" class="form__input" placeholder="Ej: Solidity" />
+        <p id="skillError" class="form__error" hidden></p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--primary" id="saveSkillBtn">Guardar</button>
+        <button class="btn btn--ghost" id="closeSkillModal2">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay overlay--hidden"></div>
+
+  <script type="module" src="../../src/pages/admin/dashboard.js"></script>
+</body>
+</html>

@@ -103,6 +103,8 @@ export async function authLogin({ email, password, remember }) {
   });
 
   // Guardamos solo el user en localStorage para saber el rol sin llamar al backend
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem("matchiq_token", response.token);
   saveSession(response.user, !!remember);
 
   return { user: response.user };
@@ -132,9 +134,9 @@ export async function authMe() {
 export async function authLogout() {
   try {
     await apiFetch("/auth/logout", { method: "POST" });
-  } catch {
-    // Si falla el backend igual limpiamos localmente
-  }
+  } catch {}
+  localStorage.removeItem("matchiq_token");
+  sessionStorage.removeItem("matchiq_token");
   clearSession();
   return { ok: true };
 }
