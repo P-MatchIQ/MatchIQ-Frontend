@@ -191,14 +191,14 @@ function populateSkillSelect() {
 function collectFormData() {
     return {
         title: val('of-title'),
-        categories: [...categories],
-        skills: [...skills],
-        min_experience_years: parseInt(val('of-experience')) || 0,
-        positions_available: 1, // field was removed from form logic
-        required_english_level: val('of-english'),
-        modality: val('of-modality'),
-        salary: parseFloat(val('of-salary')) || 0,
         description: val('of-description'),
+        salary: parseFloat(val('of-salary')) || 0,
+        modality: val('of-modality'),
+        min_experience_years: parseInt(val('of-experience')) || 0,
+        required_english_level: val('of-english'),
+        positions_available: parseInt(val('of-positions')) || 1, // Defaulting to 1 if not present
+        category_ids: [...categories],
+        skill_ids: [...skills]
     };
 }
 
@@ -211,9 +211,9 @@ function populateForm(offer) {
     setVal('of-salary', offer.salary);
     setVal('of-description', offer.description);
 
-    // Poblar tags
-    if (offer.categories) {
-        categories.push(...offer.categories);
+    // Poblar tags (ahora el backend devuelve category_ids y skill_ids)
+    if (offer.category_ids) {
+        categories.push(...offer.category_ids);
         const wrap = document.getElementById('categories-wrap');
         const select = document.getElementById('of-categories');
         renderTags(wrap, select, categories, () => {
@@ -224,8 +224,8 @@ function populateForm(offer) {
         populateSkillSelect();
     }
 
-    if (offer.skills) {
-        skills.push(...offer.skills);
+    if (offer.skill_ids) {
+        skills.push(...offer.skill_ids);
         const wrap = document.getElementById('skills-wrap');
         const select = document.getElementById('of-skills');
         renderTags(wrap, select, skills, () => {

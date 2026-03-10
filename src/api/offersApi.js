@@ -55,7 +55,10 @@ export async function updateOffer(id, data) {
  * @returns {Promise<object>}
  */
 export async function closeOffer(id) {
-    return updateOffer(id, { status: 'closed' });
+    return fetchApi(`/offers/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'closed' })
+    });
 }
 
 /**
@@ -64,5 +67,7 @@ export async function closeOffer(id) {
  * @returns {Promise<object>}
  */
 export async function cancelOffer(id) {
-    return updateOffer(id, { status: 'cancelled' });
+    return fetchApi(`/offers/${id}/force-cancel`, {
+        method: 'PATCH'
+    });
 }

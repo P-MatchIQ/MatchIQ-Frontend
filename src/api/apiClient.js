@@ -1,8 +1,7 @@
 // ── API Client ──────────────────────────────────────────────────────
 // Wrapper centralizado para llamadas HTTP con autenticación JWT.
-// Cuando el backend esté listo, cambia BASE_URL.
 
-const BASE_URL = 'http://localhost:3000'; // apuntando a json-server
+const BASE_URL = 'https://qualmishly-polysyllabic-adah.ngrok-free.dev';
 
 /**
  * Realiza una petición HTTP con headers de autenticación.
@@ -11,26 +10,39 @@ const BASE_URL = 'http://localhost:3000'; // apuntando a json-server
  * @returns {Promise<any>}
  */
 export async function fetchApi(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-    };
+  const headers = {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
 
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(error.message || `Error ${response.status}`);
-    }
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `Error ${response.status}`);
+  }
 
-    // 204 No Content
-    if (response.status === 204) return null;
+  // 204 No Content
+  if (response.status === 204) return null;
 
-    return response.json();
+  return response.json();
+}
+
+/**
+ * Completa el perfil de un candidato.
+ * @param {object} profileData - Datos del perfil
+ * @returns {Promise<object>}
+ */
+export async function completeProfile(profileData) {
+  return fetchApi('/candidate/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(profileData),
+  });
 }
