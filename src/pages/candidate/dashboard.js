@@ -656,7 +656,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   $("#editProfileBtn").addEventListener("click", openEditor);
-  $("#openProfileEditorBtn").addEventListener("click", openEditor);
   $("#profileForm").addEventListener("submit", handleProfileSubmit);
 
   await loadDashboardData();
