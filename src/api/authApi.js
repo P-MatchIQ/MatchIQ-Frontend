@@ -1,10 +1,15 @@
 import { apiFetch } from "./apiClient.js";
 
-const SESSION_KEY = "matchiq_session_mock";
+const SESSION_KEY = "matchiq_session";
+
+function saveSession(user, remember = true) {
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem(SESSION_KEY, JSON.stringify(user));
+  (remember ? sessionStorage : localStorage).removeItem(SESSION_KEY);
+}
 
 function loadSession() {
   try {
-    // Busca primero en localStorage, luego en sessionStorage
     const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
@@ -12,44 +17,29 @@ function loadSession() {
   }
 }
 
-function saveSession(session, remember = true) {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(SESSION_KEY, JSON.stringify(session));
-  (remember ? sessionStorage : localStorage).removeItem(SESSION_KEY);
-}
-
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY);
 }
 
-function generateMockToken() {
-  return `mock_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-}
-
-
-/** Register Candidate */
+// ── Registro candidato ────────────────────────────────────────────────────────
 export async function registerCandidate({ email, password, confirmPassword }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
 
-  // Validaciones en cliente antes de ir al backend
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("All fields are required.");
+    throw new Error("Todos los campos son obligatorios.");
   }
-
   if (normalizedPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
   }
-
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Passwords do not match.");
+    throw new Error("Las contraseñas no coinciden.");
   }
 
-    // POST /auth/register/candidate
-  // El backend retorna: { token }
-  const response = await apiFetch("/auth/register/candidate", {
+  // El backend devuelve { token } y la cookie se guarda automáticamente
+  await apiFetch("/auth/register/candidate", {
     method: "POST",
     body: JSON.stringify({
       email: normalizedEmail,
@@ -58,43 +48,30 @@ export async function registerCandidate({ email, password, confirmPassword }) {
     }),
   });
 
-  // Guardamos sesión automáticamente (el backend ya loguea al registrar)
-  const session = {
-    accessToken: response.token,
-    user: {
-      email: normalizedEmail,
-      role: "candidate",
-    },
-  };
+  // Guardamos el usuario en localStorage para saber el rol
+  const user = { email: normalizedEmail, role: "candidate" };
+  saveSession(user, true);
 
-  saveSession(session, true);
-
-  return { user: session.user };
+  return { user };
 }
 
-
-/** Register Company */
+// ── Registro empresa ──────────────────────────────────────────────────────────
 export async function registerCompany({ email, password, confirmPassword }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
 
-  // Validaciones en cliente antes de ir al backend
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("All fields are required.");
+    throw new Error("Todos los campos son obligatorios.");
   }
-
   if (normalizedPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
   }
-
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Passwords do not match.");
+    throw new Error("Las contraseñas no coinciden.");
   }
 
-  // POST /auth/register/company
-  // El backend retorna: { token }
-  const response = await apiFetch("/auth/register/company", {
+  await apiFetch("/auth/register/company", {
     method: "POST",
     body: JSON.stringify({
       email: normalizedEmail,
@@ -103,77 +80,66 @@ export async function registerCompany({ email, password, confirmPassword }) {
     }),
   });
 
-  // Guardamos sesión automáticamente
-  const session = {
-    accessToken: response.token,
-    user: {
-      email: normalizedEmail,
-      role: "company",
-    },
-  };
+  const user = { email: normalizedEmail, role: "company" };
+  saveSession(user, true);
 
-  saveSession(session, true);
-
-  return { user: session.user };
+  return { user };
 }
 
-/* ============================= */
-/* LOGIN */
-/* ============================= */
+// ── Login ─────────────────────────────────────────────────────────────────────
 export async function authLogin({ email, password, remember }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
 
-  // POST al endpoint /login del backend
-  const response = await apiFetch(
-    "/auth/login",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email: normalizedEmail,
-        password: normalizedPassword,
-      }),
-    }
-  );
+  // El backend devuelve { user: { id, email, role } }
+  // El token va en la cookie automáticamente
+  const response = await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      rememberMe: !!remember,
+    }),
+  });
 
-  // El backend retorna: { accessToken, refreshToken, user: { id, email, role } }
-  const session = {
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    user: response.user,
-  };
+  // Guardamos solo el user en localStorage para saber el rol sin llamar al backend
+  saveSession(response.user, !!remember);
 
-  saveSession(session, !!remember);
-
-  return { user: session.user };
+  return { user: response.user };
 }
 
-/* ============================= */
-/* AUTH ME */
-/* ============================= */
+// ── Auth Me ───────────────────────────────────────────────────────────────────
 export async function authMe() {
-  const session = loadSession();
-  if (!session?.user) {
+  try {
+    // Pregunta al backend si la cookie es válida
+    const response = await apiFetch("/auth/me", { method: "GET" });
+
+    if (response?.authenticated && response.user) {
+      saveSession(response.user, true);
+      return { authenticated: true, user: response.user };
+    }
+
+    clearSession();
+    return { authenticated: false, user: null };
+
+  } catch {
+    clearSession();
     return { authenticated: false, user: null };
   }
-  return { authenticated: true, user: session.user };
 }
 
-/* ============================= */
-/* RECOVER PASSWORD */
-/* ============================= */
-export async function authRecoverPassword({ email }) {
-  await apiFetch(
-    `/users?email=${encodeURIComponent(String(email).trim().toLowerCase())}`,
-    { method: "GET" }
-  );
-  return { ok: true };
-}
-
-/* ============================= */
-/* LOGOUT */
-/* ============================= */
+// ── Logout ────────────────────────────────────────────────────────────────────
 export async function authLogout() {
+  try {
+    await apiFetch("/auth/logout", { method: "POST" });
+  } catch {
+    // Si falla el backend igual limpiamos localmente
+  }
   clearSession();
   return { ok: true };
+}
+
+// ── Obtener sesión local (sin llamar al backend) ───────────────────────────────
+export function getSession() {
+  return loadSession();
 }
