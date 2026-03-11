@@ -1,4 +1,4 @@
-import { authLogin, authMe, /* authRecoverPassword  */} from "../api/authApi.js";
+import { authLogin, authMe, authRecoverPassword } from "../api/authApi.js";
 
 const $ = (sel) => document.querySelector(sel);
 
