@@ -1,4 +1,4 @@
-import { authLogin, authMe, authRecoverPassword } from "../api/authApi.js";
+import { authLogin, authMe } from "../api/authApi.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return ok;
   }
 
-  goRecoverBtn?.addEventListener("click", showRecover);
+  // goRecoverBtn?.addEventListener("click", showRecover);
   backToLoginBtn?.addEventListener("click", showLogin);
 
   loginForm.addEventListener("submit", async (e) => {
