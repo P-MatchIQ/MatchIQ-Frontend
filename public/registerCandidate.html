@@ -13,28 +13,47 @@
       <section class="auth">
 
         <div class="auth__head">
-            <img class="logo" src="../src/assets/iconoMatchIQ.png" alt="MatchIQ logo"/>            
+          <img class="logo" src="../src/assets/iconoMatchIQ.png" alt="MatchIQ logo"/>
         </div>
+
+        <!-- Banners de feedback -->
+        <p id="error-banner"   class="banner banner--error"   hidden></p>
+        <p id="success-banner" class="banner banner--success" hidden></p>
 
         <form class="card">
 
           <!-- ACCESS -->
-          <div class="section">           
+          <div class="section">
 
             <div class="field">
-              <label>Email Address</label>
-              <input type="email" placeholder="email@example.com" required />
+              <label for="email">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="email@example.com"
+                required
+              />
             </div>
 
             <div class="grid-2">
               <div class="field">
-                <label>Password</label>
-                <input type="password" placeholder="••••••••" required />
+                <label for="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                />
               </div>
 
               <div class="field">
-                <label>Confirm Password</label>
-                <input type="password" placeholder="••••••••" required />
+                <label for="confirmPassword">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                />
               </div>
             </div>
           </div>
@@ -55,9 +74,14 @@
 
         </form>
 
+        <p class="auth__footer">
+          Already have an account? <a href="./login.html">Sign in</a>
+        </p>
+
       </section>
     </main>
-
   </div>
+
+  <script type="module" src="../src/pages/registerCandidate.js"></script>
 </body>
 </html>

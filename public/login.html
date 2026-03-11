@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>MatchIQ · Login</title>
+  <link rel="stylesheet" href="../src/styles/login.css" />
+</head>
+
+<body>
+  <div class="bg">
+
+    <header class="topbar">
+      <a class="brand" href="./index.html">
+        <img class="brand__logo" src="../src/assets/iconoMatchIQ-Imag.png" alt="MatchIQ logo" />
+        <span class="brand__name">MatchIQ</span>
+      </a>
+    </header>
+
+    <main class="page">
+      <section class="auth">
+
+        <div class="auth__head">
+          <h1>Platform Access</h1>
+          <p>Sign in using your corporate or personal credentials.</p>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form class="card" id="loginForm" novalidate>
+
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input id="email" name="email" type="email" placeholder="example@matchiq.com" autocomplete="email" />
+            <p class="field__error" id="emailError" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <div class="field__row">
+              <label for="password">Password</label>
+              <!-- open recover view -->
+              <a href="./forgotPassword.html" class="link" id="goRecoverBtn">Forgot your password?</a>
+            </div>
+
+            <input id="password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <p class="field__error" id="passwordError" aria-live="polite"></p>
+          </div>
+
+          <div class="options">
+            <label class="checkbox">
+              <input id="rememberMe" type="checkbox" />
+              <span>Remember me</span>
+            </label>
+          </div>
+
+          <!-- Global alert (error/success) -->
+          <div class="alert" id="loginAlert" hidden role="alert" aria-live="assertive"></div>
+
+          <button class="btn btn--primary" id="loginSubmitBtn" type="submit">
+            <span class="btn__text">Sign in to MatchIQ</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+
+          <p class="hint" id="loginSuccessHint" hidden>
+            Signed in successfully. Redirecting…
+          </p>
+
+          <p class="hint">
+            Protected by MatchIQ identity verification
+          </p>
+
+          <div class="divider"></div>
+
+          <div class="register">
+            <div class="register__col">
+              <span class="register__kicker">Looking for a job?</span>
+              <a class="register__link" href="./registerCandidate.html">Talent Registration</a>
+            </div>
+
+            <div class="register__sep"></div>
+
+            <div class="register__col">
+              <span class="register__kicker">Are you a recruiter?</span>
+              <a class="register__link" href="./registerCompany.html">Company Registration</a>
+            </div>
+          </div>
+
+
+        </form>
+
+        <!-- RECOVER FORM -->
+        <form class="card" id="recoverForm" hidden novalidate>
+
+          <div class="auth__head" style="text-align:left; margin:0 0 18px;">
+            <h1 style="margin:0 0 6px; font-size:22px;">Recover Password</h1>
+            <p style="margin:0; color:var(--text-700);">We’ll send instructions to your email.</p>
+          </div>
+
+          <div class="field">
+            <label for="recoverEmail">Email Address</label>
+            <input id="recoverEmail" name="recoverEmail" type="email" placeholder="example@matchiq.com" autocomplete="email" />
+            <p class="field__error" id="recoverEmailError" aria-live="polite"></p>
+          </div>
+
+          <div class="alert" id="recoverAlert" hidden role="alert" aria-live="assertive"></div>
+
+          <button class="btn btn--primary" id="recoverSubmitBtn" type="submit">
+            <span class="btn__text">Send recovery link</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+
+          <p class="hint" id="recoverSuccessHint" hidden>
+            If the email exists, you’ll receive recovery instructions.
+          </p>
+
+          <button type="button" class="link link--back" id="backToLoginBtn">← Back to login</button>
+
+        </form>
+
+        <footer class="footnote">
+          AI-BASED RECRUITMENT SYSTEM · MATCHIQ V2.0
+        </footer>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- If your structure uses pages/login.js -->
+  <script type="module" src="../src/pages/login.js"></script>
+</body>
+</html>
