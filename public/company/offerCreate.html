@@ -19,24 +19,36 @@
 
     <!-- Categories & Technologies -->
     <div class="form-row">
-        <!-- Categories (tag input) -->
+        <!-- Categories (multi-select dropdown) -->
         <div class="form-group">
             <label>Job Categories</label>
-            <div class="tag-input-wrap" id="categories-wrap">
-                <select class="tag-input custom-select" id="of-categories">
-                    <option value="" disabled selected>Select a category</option>
-                </select>
+            <div class="multiselect" id="categories-multiselect">
+                <div class="multiselect__control" id="categories-control">
+                    <div class="multiselect__tags" id="categories-tags">
+                        <span class="multiselect__placeholder">Select categories…</span>
+                    </div>
+                    <span class="multiselect__arrow">▾</span>
+                </div>
+                <div class="multiselect__dropdown" id="categories-dropdown">
+                    <div class="multiselect__options" id="categories-options"></div>
+                </div>
             </div>
             <span class="form-error" id="err-categories">Add at least one category.</span>
         </div>
 
-        <!-- Technologies (tag input) -->
+        <!-- Technologies (multi-select dropdown) -->
         <div class="form-group">
             <label>Required Technologies</label>
-            <div class="tag-input-wrap" id="skills-wrap">
-                <select class="tag-input custom-select" id="of-skills" disabled>
-                    <option value="" disabled selected>Select technologies</option>
-                </select>
+            <div class="multiselect" id="skills-multiselect">
+                <div class="multiselect__control" id="skills-control">
+                    <div class="multiselect__tags" id="skills-tags">
+                        <span class="multiselect__placeholder">Select a category first</span>
+                    </div>
+                    <span class="multiselect__arrow">▾</span>
+                </div>
+                <div class="multiselect__dropdown" id="skills-dropdown">
+                    <div class="multiselect__options" id="skills-options"></div>
+                </div>
             </div>
             <span class="form-error" id="err-skills">Add at least one technology.</span>
         </div>
@@ -80,7 +92,8 @@
     <!-- Salary -->
     <div class="form-group">
         <label for="of-salary">Salary (COP)</label>
-        <input class="form-input" id="of-salary" type="number" min="0" step="100000" placeholder="E.g.: 8000000" />
+        <input class="form-input" id="of-salary" type="text" inputmode="numeric" placeholder="E.g.: 8.000.000"
+            autocomplete="off" />
     </div>
 
     <!-- Description -->

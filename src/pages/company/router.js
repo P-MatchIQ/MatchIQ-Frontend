@@ -93,7 +93,8 @@ function updateSidebarActive(path) {
     const navItems = document.querySelectorAll('#sidebar-nav .nav__item');
     navItems.forEach(item => {
         const route = item.dataset.route;
-        const isMatch = path === route || path.startsWith(route + '/');
+        const isMatch = path === route
+            || (route === 'offers' && path === 'offers/edit');
         item.classList.toggle('is-active', isMatch);
     });
 }

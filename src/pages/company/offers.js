@@ -8,7 +8,9 @@ import { showToast, showConfirmModal, showOfferModal } from './app.js';
 const MODALITY_LABELS = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'Onsite' };
 
 const STATUS_LABELS = {
+    open: { label: 'Open', cls: 'pill--active' },
     active: { label: 'Active', cls: 'pill--active' },
+    in_process: { label: 'In Process', cls: 'pill--in-process' },
     closed: { label: 'Closed', cls: 'pill--closed' },
     cancelled: { label: 'Cancelled', cls: 'pill--cancelled' },
 };
@@ -75,6 +77,10 @@ function renderOffers() {
     container.addEventListener('click', handleAction);
 }
 
+function isActiveOffer(offer) {
+    return offer.status === 'active' || offer.status === 'open';
+}
+
 function renderOfferCard(offer) {
     const status = STATUS_LABELS[offer.status] || { label: offer.status, cls: '' };
     const salary = offer.salary
@@ -86,11 +92,6 @@ function renderOfferCard(offer) {
         <div class="offer-card__header">
             <h3 class="offer-card__title">${esc(offer.title)}</h3>
             <span class="pill ${status.cls}">${status.label}</span>
-        </div>
-
-        <div class="offer-card__meta">
-            ${(offer.categories || []).map(c => `<span class="offer-card__tag">${esc(c)}</span>`).join('')}
-            ${(offer.skills || []).map(s => `<span class="offer-card__tag">${esc(s)}</span>`).join('')}
         </div>
 
         <div class="offer-card__details">
@@ -114,7 +115,7 @@ function renderOfferCard(offer) {
             </div>
         </div>
 
-        ${offer.status === 'active' ? `
+        ${isActiveOffer(offer) ? `
         <div class="offer-card__actions">
             <a href="#/offers/edit/${offer.id}" class="btn btn--ghost btn--sm">Edit</a>
             <button class="btn btn--warning btn--sm" data-action="close" data-id="${offer.id}">Close</button>
@@ -127,10 +128,7 @@ function renderOfferCard(offer) {
 
 async function handleAction(e) {
     const btn = e.target.closest('[data-action]');
-    // If we didn't click an action button, check if we clicked an offer card
     if (!btn) {
-        // Prevent clicking inside an existing modal or edit link 
-        // Note: card edit links aren't [data-action], but are links, so stop if it's a link
         if (e.target.closest('a')) return;
 
         const card = e.target.closest('.offer-card');
@@ -138,7 +136,7 @@ async function handleAction(e) {
             const cardId = card.dataset.id;
             const offer = allOffers.find(o => String(o.id) === String(cardId));
             if (offer) {
-                const actionsHtml = offer.status === 'active' ? `<a href="#/offers/edit/${offer.id}" class="btn btn--primary" style="text-decoration: none;">Edit</a>` : '';
+                const actionsHtml = isActiveOffer(offer) ? `<a href="#/offers/edit/${offer.id}" class="btn btn--primary" style="text-decoration: none;">Edit</a>` : '';
                 showOfferModal(offer, actionsHtml);
             }
         }

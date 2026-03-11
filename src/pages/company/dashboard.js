@@ -7,10 +7,16 @@ import { showOfferModal } from './app.js';
 const MODALITY_LABELS = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'Onsite' };
 
 const STATUS_PILLS = {
+    open: '<span class="pill pill--active">Open</span>',
     active: '<span class="pill pill--active">Active</span>',
+    in_process: '<span class="pill pill--in-process">In Process</span>',
     closed: '<span class="pill pill--closed">Closed</span>',
     cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
 };
+
+function isActiveOffer(offer) {
+    return offer.status === 'active' || offer.status === 'open';
+}
 
 /**
  * Inicializa la vista del Dashboard.
@@ -18,7 +24,7 @@ const STATUS_PILLS = {
 export async function initDashboard() {
     const offers = await getOffers();
 
-    const active = offers.filter(o => o.status === 'active').length;
+    const active = offers.filter(o => isActiveOffer(o)).length;
     const closed = offers.filter(o => o.status === 'closed').length;
     const total = offers.length;
 
@@ -31,7 +37,7 @@ export async function initDashboard() {
     const tbody = document.getElementById('dashboard-table-body');
     if (!tbody) return;
 
-    const recent = offers.slice(-5).reverse();
+    const recent = offers.slice(0, 5);
 
     if (recent.length === 0) {
         tbody.innerHTML = `
@@ -47,7 +53,6 @@ export async function initDashboard() {
         <tr class="offer-row" data-id="${o.id}" style="cursor: pointer;">
             <td>
                 <div class="job__title" style="color: var(--primary-600); font-weight: 600;">${esc(o.title)}</div>
-                <div class="job__meta">${(o.categories || []).join(', ')}</div>
             </td>
             <td>${MODALITY_LABELS[o.modality] || '—'}</td>
             <td>${STATUS_PILLS[o.status] || o.status}</td>

@@ -54,14 +54,17 @@ export function showOfferModal(offer, actionsHtml, onActionClick) {
 
     // Status
     const statusMap = {
+        open: '<span class="pill pill--active">Open</span>',
         active: '<span class="pill pill--active">Active</span>',
+        in_process: '<span class="pill pill--in-process">In Process</span>',
         closed: '<span class="pill pill--closed">Closed</span>',
         cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
     };
     document.getElementById('offer-modal-status').innerHTML = statusMap[offer.status] || `<span class="pill">${offer.status}</span>`;
 
-    // Tags
-    const tags = [...(offer.categories || []), ...(offer.skills || [])];
+    // Tags — el backend puede devolver strings o {id, name} objects
+    const rawTags = [...(offer.categories || []), ...(offer.skills || [])];
+    const tags = rawTags.map(t => typeof t === 'object' ? t.name : t);
     document.getElementById('offer-modal-meta').innerHTML = tags.map(t => `<span class="offer-card__tag">${t}</span>`).join('');
 
     // Details grid

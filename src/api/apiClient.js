@@ -1,7 +1,7 @@
 // ── API Client ──────────────────────────────────────────────────────
 // Wrapper centralizado para llamadas HTTP con autenticación JWT.
 
-const BASE_URL = 'https://qualmishly-polysyllabic-adah.ngrok-free.dev';
+const BASE_URL = 'http://localhost:3005';
 
 /**
  * Realiza una petición HTTP con headers de autenticación.
@@ -46,3 +46,6 @@ export async function completeProfile(profileData) {
     body: JSON.stringify(profileData),
   });
 }
+
+// Alias para compatibilidad con otros módulos que importan 'apiFetch'
+export { fetchApi as apiFetch };

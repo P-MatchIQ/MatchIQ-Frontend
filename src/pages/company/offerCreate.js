@@ -1,22 +1,28 @@
 // ── Offer Create/Edit View Logic ────────────────────────────────
 // Maneja formulario de creación y edición de ofertas.
-// Incluye tag inputs para categorías y tecnologías.
+// Categorías y skills se obtienen del backend (catálogo).
 
 import { createOffer, getOfferById, updateOffer } from '../../api/offersApi.js';
-import { CATEGORIES_DATA } from '../../data/categoriesData.js';
+import { getCategories, getSkillsByCategory } from '../../api/catalogApi.js';
 import { showToast } from './app.js';
 import { navigateTo } from './router.js';
 
-/** @type {string[]} */  let categories = [];
-/** @type {string[]} */  let skills = [];
+/** @type {Array<{id: string, name: string}>} */  let allCategories = [];
+/** @type {Array<{id: string, name: string}>} */  let selectedCategories = [];
+/** @type {Array<{id: string, name: string}>} */  let selectedSkills = [];
+
+// Cache de skills por categoría (evita re-fetch)
+/** @type {Map<string, Array<{id: string, name: string}>>} */
+const skillsCache = new Map();
 
 /**
  * Inicializa la vista de crear/editar oferta.
  * @param {{ id?: string }} params
  */
 export async function initOfferCreate(params = {}) {
-    categories = [];
-    skills = [];
+    selectedCategories = [];
+    selectedSkills = [];
+    skillsCache.clear();
 
     const isEdit = !!params.id;
 
@@ -31,23 +37,30 @@ export async function initOfferCreate(params = {}) {
         if (submitBtn) submitBtn.textContent = 'Update Offer';
     }
 
-    // Setup tag inputs with custom logic
-    populateCategorySelect();
-    populateSkillSelect();
+    // Cargar categorías del backend
+    try {
+        allCategories = await getCategories();
+    } catch (e) {
+        showToast('Error loading categories.', 'error');
+        allCategories = [];
+    }
 
-    setupTagSelect('categories-wrap', 'of-categories', categories, () => {
-        populateCategorySelect();
-        populateSkillSelect();
-    });
-    setupTagSelect('skills-wrap', 'of-skills', skills, () => {
-        populateSkillSelect();
-    });
+    // Setup custom multiselect dropdowns
+    setupCategoryMultiselect();
+    renderCategoryOptions();
+    renderSkillOptions();
+
+    // Salary auto-format
+    setupSalaryFormatter();
+
+    // Click outside to close dropdowns
+    document.addEventListener('click', handleClickOutside);
 
     // Si es edición, poblar formulario
     if (isEdit) {
         try {
             const offer = await getOfferById(params.id);
-            if (offer) populateForm(offer);
+            if (offer) await populateForm(offer);
         } catch (e) {
             showToast('Error loading offer.', 'error');
         }
@@ -60,6 +73,7 @@ export async function initOfferCreate(params = {}) {
         if (!validateForm()) return;
 
         const data = collectFormData();
+        console.log(data);
 
         try {
             if (isEdit) {
@@ -76,163 +90,245 @@ export async function initOfferCreate(params = {}) {
     });
 }
 
-/* ── Tag Input Component ───────────────────────────────────────── */
+/* ── Custom Multiselect Component ──────────────────────────────── */
 
-function setupTagSelect(wrapId, selectId, store, onAddOrRemove) {
-    const wrap = document.getElementById(wrapId);
-    const select = document.getElementById(selectId);
-    if (!wrap || !select) return;
+function handleClickOutside(e) {
+    const catMs = document.getElementById('categories-multiselect');
+    const sklMs = document.getElementById('skills-multiselect');
 
-    select.addEventListener('change', (e) => {
-        const val = select.value;
-        if (val && !store.includes(val)) {
-            store.push(val);
-            renderTags(wrap, select, store, onAddOrRemove);
-            if (onAddOrRemove) onAddOrRemove();
-        }
-        select.value = '';
-    });
+    if (catMs && !catMs.contains(e.target)) {
+        catMs.classList.remove('is-open');
+    }
+    if (sklMs && !sklMs.contains(e.target)) {
+        sklMs.classList.remove('is-open');
+    }
 }
 
-function renderTags(wrap, input, store, onRemove) {
-    // Remover chips existentes
-    wrap.querySelectorAll('.tag-chip').forEach(el => el.remove());
-
-    // Insertar antes del input
-    store.forEach((tag, i) => {
-        const chip = document.createElement('span');
-        chip.className = 'tag-chip';
-        chip.innerHTML = `${esc(tag)}<button type="button" class="tag-chip__remove" data-index="${i}">&times;</button>`;
-        wrap.insertBefore(chip, input);
-    });
-
-    // Event delegation para remover
-    wrap.querySelectorAll('.tag-chip__remove').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const idx = parseInt(btn.dataset.index);
-            store.splice(idx, 1);
-            renderTags(wrap, input, store, onRemove);
-            if (onRemove) onRemove();
+function setupCategoryMultiselect() {
+    // Toggle category dropdown
+    const catControl = document.getElementById('categories-control');
+    if (catControl) {
+        catControl.addEventListener('click', () => {
+            const ms = document.getElementById('categories-multiselect');
+            ms.classList.toggle('is-open');
+            // Close skills when opening categories
+            document.getElementById('skills-multiselect')?.classList.remove('is-open');
         });
-    });
+    }
+
+    // Toggle skills dropdown
+    const sklControl = document.getElementById('skills-control');
+    if (sklControl) {
+        sklControl.addEventListener('click', () => {
+            if (selectedCategories.length === 0) return;
+            const ms = document.getElementById('skills-multiselect');
+            ms.classList.toggle('is-open');
+            // Close categories when opening skills
+            document.getElementById('categories-multiselect')?.classList.remove('is-open');
+        });
+    }
 }
 
-function populateCategorySelect() {
-    const select = document.getElementById('of-categories');
-    if (!select) return;
+function renderCategoryOptions() {
+    const container = document.getElementById('categories-options');
+    if (!container) return;
 
-    select.innerHTML = '<option value="" disabled selected>Select a category</option>';
-    CATEGORIES_DATA.forEach(cat => {
-        if (!categories.includes(cat.name)) {
-            const opt = document.createElement('option');
-            opt.value = cat.name;
-            opt.textContent = cat.name;
-            select.appendChild(opt);
-        }
-    });
-}
+    container.innerHTML = '';
 
-function populateSkillSelect() {
-    const select = document.getElementById('of-skills');
-    if (!select) return;
-
-    if (categories.length === 0) {
-        select.innerHTML = '<option value="" disabled selected>Select a category first</option>';
-        select.disabled = true;
+    if (allCategories.length === 0) {
+        container.innerHTML = '<div class="multiselect__empty">No categories available</div>';
         return;
     }
 
-    select.innerHTML = '<option value="" disabled selected>Select technologies</option>';
+    allCategories.forEach(cat => {
+        const isSelected = selectedCategories.some(s => s.id === cat.id);
+        const opt = document.createElement('div');
+        opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
+        opt.dataset.id = cat.id;
+        opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(cat.name)}</span>`;
 
-    // Group skills by category name
-    let groupedSkills = {};
-    const hasFullStack = categories.includes('FullStack');
+        opt.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (isSelected) {
+                // Deselect
+                selectedCategories = selectedCategories.filter(s => s.id !== cat.id);
+                // Remove skills from this category too
+                const catSkills = skillsCache.get(cat.id) || [];
+                selectedSkills = selectedSkills.filter(s => !catSkills.some(cs => cs.id === s.id));
+            } else {
+                selectedCategories.push({ id: cat.id, name: cat.name });
+            }
+            renderCategoryTags();
+            renderCategoryOptions();
+            await renderSkillOptions();
+            renderSkillTags();
+        });
 
-    CATEGORIES_DATA.forEach(cat => {
-        // If the category is explicitly selected, or if FullStack is selected and this is Frontend/Backend
-        if (categories.includes(cat.name) || (hasFullStack && (cat.name === 'Frontend' || cat.name === 'Backend'))) {
-            if (!groupedSkills[cat.name]) groupedSkills[cat.name] = new Set();
-            cat.skills.forEach(s => groupedSkills[cat.name].add(s));
-        }
+        container.appendChild(opt);
     });
+}
 
+async function renderSkillOptions() {
+    const container = document.getElementById('skills-options');
+    if (!container) return;
+
+    if (selectedCategories.length === 0) {
+        container.innerHTML = '<div class="multiselect__empty">Select a category first</div>';
+        return;
+    }
+
+    container.innerHTML = '';
     let hasOptions = false;
 
-    // Render optgroups
-    for (const [groupName, skillSet] of Object.entries(groupedSkills)) {
-        // Filter out skills that are already selected
-        const availableInGroup = Array.from(skillSet).sort().filter(skill => !skills.includes(skill));
+    for (const cat of selectedCategories) {
+        if (!skillsCache.has(cat.id)) {
+            try {
+                const skills = await getSkillsByCategory(cat.id);
+                skillsCache.set(cat.id, skills);
+            } catch (e) {
+                skillsCache.set(cat.id, []);
+            }
+        }
 
-        if (availableInGroup.length > 0) {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = groupName;
+        const catSkills = skillsCache.get(cat.id) || [];
+        if (catSkills.length === 0) continue;
 
-            availableInGroup.forEach(skill => {
-                const opt = document.createElement('option');
-                opt.value = skill;
-                opt.textContent = skill;
-                optgroup.appendChild(opt);
+        // Group label
+        const lbl = document.createElement('div');
+        lbl.className = 'multiselect__group-label';
+        lbl.textContent = cat.name;
+        container.appendChild(lbl);
+
+        catSkills.forEach(skill => {
+            const isSelected = selectedSkills.some(s => s.id === skill.id);
+            const opt = document.createElement('div');
+            opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
+            opt.dataset.id = skill.id;
+            opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(skill.name)}</span>`;
+
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isSelected) {
+                    selectedSkills = selectedSkills.filter(s => s.id !== skill.id);
+                } else {
+                    selectedSkills.push({ id: skill.id, name: skill.name });
+                }
+                renderSkillOptions();
+                renderSkillTags();
             });
 
-            select.appendChild(optgroup);
+            container.appendChild(opt);
             hasOptions = true;
-        }
+        });
     }
 
-    select.disabled = !hasOptions;
-    if (!hasOptions && categories.length > 0) {
-        select.innerHTML = '<option value="" disabled selected>All technologies selected</option>';
+    if (!hasOptions) {
+        container.innerHTML = '<div class="multiselect__empty">No technologies available</div>';
     }
+}
+
+function renderCategoryTags() {
+    const tagsContainer = document.getElementById('categories-tags');
+    if (!tagsContainer) return;
+
+    tagsContainer.innerHTML = '';
+
+    if (selectedCategories.length === 0) {
+        tagsContainer.innerHTML = '<span class="multiselect__placeholder">Select categories…</span>';
+        return;
+    }
+
+    selectedCategories.forEach(cat => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `${esc(cat.name)}<button type="button" class="tag-chip__remove" data-id="${cat.id}">&times;</button>`;
+
+        chip.querySelector('.tag-chip__remove').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            selectedCategories = selectedCategories.filter(s => s.id !== cat.id);
+            // Remove skills from this category
+            const catSkills = skillsCache.get(cat.id) || [];
+            selectedSkills = selectedSkills.filter(s => !catSkills.some(cs => cs.id === s.id));
+            renderCategoryTags();
+            renderCategoryOptions();
+            await renderSkillOptions();
+            renderSkillTags();
+        });
+
+        tagsContainer.appendChild(chip);
+    });
+}
+
+function renderSkillTags() {
+    const tagsContainer = document.getElementById('skills-tags');
+    if (!tagsContainer) return;
+
+    tagsContainer.innerHTML = '';
+
+    if (selectedSkills.length === 0) {
+        const placeholder = selectedCategories.length === 0
+            ? 'Select a category first'
+            : 'Select technologies…';
+        tagsContainer.innerHTML = `<span class="multiselect__placeholder">${placeholder}</span>`;
+        return;
+    }
+
+    selectedSkills.forEach(skill => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `${esc(skill.name)}<button type="button" class="tag-chip__remove" data-id="${skill.id}">&times;</button>`;
+
+        chip.querySelector('.tag-chip__remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedSkills = selectedSkills.filter(s => s.id !== skill.id);
+            renderSkillTags();
+            renderSkillOptions();
+        });
+
+        tagsContainer.appendChild(chip);
+    });
 }
 
 /* ── Form Helpers ──────────────────────────────────────────────── */
 
 function collectFormData() {
+    const rawSalary = val('of-salary').replace(/\./g, '');
     return {
         title: val('of-title'),
         description: val('of-description'),
-        salary: parseFloat(val('of-salary')) || 0,
+        salary: parseFloat(rawSalary) || 0,
         modality: val('of-modality'),
         min_experience_years: parseInt(val('of-experience')) || 0,
         required_english_level: val('of-english'),
-        positions_available: parseInt(val('of-positions')) || 1, // Defaulting to 1 if not present
-        category_ids: [...categories],
-        skill_ids: [...skills]
+        positions_available: parseInt(val('of-positions')) || 1,
+        category_ids: selectedCategories.map(c => c.id),
+        skill_ids: selectedSkills.map(s => s.id)
     };
 }
 
-function populateForm(offer) {
+async function populateForm(offer) {
     setVal('of-id', offer.id);
     setVal('of-title', offer.title);
     setVal('of-experience', offer.min_experience_years);
     setVal('of-english', offer.required_english_level);
     setVal('of-modality', offer.modality);
-    setVal('of-salary', offer.salary);
+    setVal('of-salary', formatCOP(offer.salary));
     setVal('of-description', offer.description);
 
-    // Poblar tags (ahora el backend devuelve category_ids y skill_ids)
-    if (offer.category_ids) {
-        categories.push(...offer.category_ids);
-        const wrap = document.getElementById('categories-wrap');
-        const select = document.getElementById('of-categories');
-        renderTags(wrap, select, categories, () => {
-            populateCategorySelect();
-            populateSkillSelect();
-        });
-        populateCategorySelect();
-        populateSkillSelect();
+    // Poblar categorías (backend devuelve [{id, name}])
+    if (offer.categories && offer.categories.length > 0) {
+        selectedCategories.push(...offer.categories);
+        renderCategoryTags();
+        renderCategoryOptions();
     }
 
-    if (offer.skill_ids) {
-        skills.push(...offer.skill_ids);
-        const wrap = document.getElementById('skills-wrap');
-        const select = document.getElementById('of-skills');
-        renderTags(wrap, select, skills, () => {
-            populateSkillSelect();
-        });
-        populateSkillSelect();
+    // Poblar skills (backend devuelve [{id, name, category}])
+    if (offer.skills && offer.skills.length > 0) {
+        selectedSkills.push(...offer.skills.map(s => ({ id: s.id, name: s.name })));
+        renderSkillTags();
     }
+
+    await renderSkillOptions();
 }
 
 function validateForm() {
@@ -244,11 +340,11 @@ function validateForm() {
     valid = checkRequired('of-description', 'err-description') && valid;
 
     // Tags
-    if (categories.length === 0) {
+    if (selectedCategories.length === 0) {
         showError('err-categories'); valid = false;
     } else { hideError('err-categories'); }
 
-    if (skills.length === 0) {
+    if (selectedSkills.length === 0) {
         showError('err-skills'); valid = false;
     } else { hideError('err-skills'); }
 
@@ -286,4 +382,27 @@ function esc(str) {
     const d = document.createElement('div');
     d.textContent = str || '';
     return d.innerHTML;
+}
+
+/* ── Salary Formatter (COP) ───────────────────────────────────── */
+
+function formatCOP(value) {
+    const num = String(value).replace(/\D/g, '');
+    if (!num) return '';
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function setupSalaryFormatter() {
+    const input = document.getElementById('of-salary');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+        const cursorPos = input.selectionStart;
+        const oldLen = input.value.length;
+        const raw = input.value.replace(/\D/g, '');
+        input.value = formatCOP(raw);
+        const newLen = input.value.length;
+        const newPos = Math.max(0, cursorPos + (newLen - oldLen));
+        input.setSelectionRange(newPos, newPos);
+    });
 }

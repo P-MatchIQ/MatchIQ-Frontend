@@ -1,6 +1,5 @@
 // ── Offers API ──────────────────────────────────────────────────────
 // CRUD de ofertas laborales.
-// Usa JSON Server como backend temporal.
 
 import { fetchApi } from './apiClient.js';
 
@@ -29,13 +28,7 @@ export async function getOfferById(id) {
  * @returns {Promise<object>} - Oferta creada
  */
 export async function createOffer(data) {
-    const newOffer = {
-        ...data,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
-    return fetchApi('/offers', { method: 'POST', body: JSON.stringify(newOffer) });
+    return fetchApi('/offers', { method: 'POST', body: JSON.stringify(data) });
 }
 
 /**
@@ -45,8 +38,7 @@ export async function createOffer(data) {
  * @returns {Promise<object>}
  */
 export async function updateOffer(id, data) {
-    const updateData = { ...data, updatedAt: new Date().toISOString() };
-    return fetchApi(`/offers/${id}`, { method: 'PATCH', body: JSON.stringify(updateData) });
+    return fetchApi(`/offers/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
 /**
