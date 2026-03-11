@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = "http://localhost:3005"; // json-server
+const DEFAULT_BASE_URL = "http://localhost:3005"; 
 
 export async function apiFetch(path, options = {}) {
   const url = `${DEFAULT_BASE_URL}${path}`;
