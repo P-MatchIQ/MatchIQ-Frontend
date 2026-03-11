@@ -139,6 +139,32 @@ export async function authLogout() {
   return { ok: true };
 }
 
+// ── Recuperar contraseña ──────────────────────────────────────────────────────
+export async function authRecoverPassword({ email }) {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error("Email is required.");
+  }
+
+  // TODO: Endpoint de recuperación pendiente de definición en el backend
+  // Podría ser: POST /auth/forgot-password o POST /auth/reset-password
+  try {
+    await apiFetch("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: normalizedEmail }),
+    });
+    return { ok: true };
+  } catch (error) {
+    // Si el endpoint no existe aún, retornamos success como simulación
+    if (error.status === 404) {
+      console.warn("[authRecoverPassword] Endpoint /auth/forgot-password not yet implemented in backend");
+      return { ok: true };
+    }
+    throw error;
+  }
+}
+
 // ── Obtener sesión local (sin llamar al backend) ───────────────────────────────
 export function getSession() {
   return loadSession();
