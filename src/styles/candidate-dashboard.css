@@ -32,11 +32,16 @@ select{
 
 .layout{
   min-height:100vh;
-  display:grid;
-  grid-template-columns:280px 1fr;
+  display:block;
 }
 
 .sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+  width:280px;
+  height:100vh;
+  overflow-y:auto;
   background:linear-gradient(180deg,#fbfdff 0%, #f2f6fb 100%);
   border-right:1px solid rgba(125,160,202,0.16);
   padding:28px 20px;
@@ -150,6 +155,7 @@ select{
 
 .main{
   padding:34px 34px 48px;
+  margin-left:280px;
 }
 
 .topbar{
@@ -715,15 +721,6 @@ select{
 }
 
 @media (max-width: 900px){
-  .layout{
-    grid-template-columns:1fr;
-  }
-
-  .sidebar{
-    border-right:none;
-    border-bottom:1px solid rgba(125,160,202,0.16);
-  }
-
   .topbar{
     flex-direction:column;
   }
