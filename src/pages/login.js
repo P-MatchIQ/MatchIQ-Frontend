@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return ok;
   }
 
-  goRecoverBtn?.addEventListener("click", showRecover);
+  // goRecoverBtn?.addEventListener("click", showRecover);
   backToLoginBtn?.addEventListener("click", showLogin);
 
   loginForm.addEventListener("submit", async (e) => {

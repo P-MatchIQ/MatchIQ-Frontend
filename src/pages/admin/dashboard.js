@@ -573,21 +573,18 @@ function initLogout() {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  const { getSession } = await import("../../api/authApi.js");
-  const session = getSession();
+  const me = await authMe();
 
-  if (!session || session.role !== "admin") {
-    window.location.href = "../login.html";
+  if (!me.authenticated || me.user?.role !== "admin") {
+    window.location.href = "/public/login.html";
     return;
   }
 
   initNav();
   initModals();
   initToggleStatus();
-  initCatalogEvents();  
+  initCatalogEvents();
   initSearchAndSort();
   initLogout();
-
-  // Cargar dashboard al inicio
   loadDashboard();
 });
