@@ -383,7 +383,6 @@ function initProfileModal() {
   };
 
   $("#editProfileBtn")?.addEventListener("click", openEditor);
-  $("#openProfileEditorBtn")?.addEventListener("click", openEditor);
 
   $("#closeProfileModalBtn")?.addEventListener("click", () => $("#profileModal").close());
   $("#cancelProfileBtn")?.addEventListener("click", () => $("#profileModal").close());
