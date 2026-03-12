@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MatchIQ · Company Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../../src/styles/company.css" />
+</head>
+
+<body>
+    <div class="app">
+
+        <!-- ─── SIDEBAR (estática) ─── -->
+        <aside class="sidebar">
+            <div class="sidebar__top">
+                <a class="brand" href="#/dashboard">
+                    <img class="brand__mark" src="../../src/assets/iconoMatchIQ.png" alt="MatchIQ logo" />
+                </a>
+
+                <nav class="nav" id="sidebar-nav">
+                    <a class="nav__item is-active" href="#/dashboard" data-route="dashboard">
+                        <span class="nav__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z" />
+                            </svg>
+                        </span>
+                        <span>Dashboard</span>
+                    </a>
+
+                    <a class="nav__item" href="#/offers/create" data-route="offers/create">
+                        <span class="nav__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                            </svg>
+                        </span>
+                        <span>Create Offer</span>
+                    </a>
+
+                    <a class="nav__item" href="#/offers" data-route="offers">
+                        <span class="nav__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
+                            </svg>
+                        </span>
+                        <span>My Offers</span>
+                    </a>
+
+                    <a class="nav__item" href="#/matches" data-route="matches">
+                        <span class="nav__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z" />
+                            </svg>
+                        </span>
+                        <span>Candidates</span>
+                    </a>
+                </nav>
+            </div>
+
+
+            <button class="nav__item nav__item--logout" id="btn-logout">
+                <span class="nav__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                            d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                    </svg>
+                </span>
+                <span>Logout</span>
+            </button>
+        </aside>
+
+        <!-- ─── MAIN (contenido dinámico) ─── -->
+        <main class="main" id="app">
+            <!-- El router inyecta aquí el contenido de cada vista -->
+        </main>
+
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Modal overlay -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h3 class="modal__title" id="modal-title"></h3>
+            <p class="modal__message" id="modal-message"></p>
+            <div class="modal__actions">
+                <button class="btn btn--ghost" id="modal-cancel">Cancel</button>
+                <button class="btn btn--danger" id="modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offer Details Modal overlay -->
+    <div class="modal-overlay" id="offer-modal-overlay">
+        <div class="modal" style="max-width: 600px; width: 90%; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <h3 class="modal__title" id="offer-modal-title" style="margin-bottom: 0;"></h3>
+                <span id="offer-modal-status"></span>
+            </div>
+
+            <div id="offer-modal-meta" style="margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+
+            <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; font-size: 0.9rem;">
+                <div><strong style="color: var(--text-600);">Experience:</strong> <span id="offer-modal-exp"></span>
+                </div>
+                <div><strong style="color: var(--text-600);">English:</strong> <span id="offer-modal-eng"></span></div>
+                <div><strong style="color: var(--text-600);">Modality:</strong> <span id="offer-modal-mod"></span></div>
+                <div><strong style="color: var(--text-600);">Salary:</strong> <span id="offer-modal-sal"></span></div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <strong style="color: var(--text-600); display: block; margin-bottom: 8px;">Description</strong>
+                <p id="offer-modal-desc"
+                    style="white-space: pre-wrap; margin: 0; line-height: 1.5; color: var(--text-700); font-size: 0.95rem;">
+                </p>
+            </div>
+
+            <div class="modal__actions" id="offer-modal-actions">
+                <!-- Actions injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../../src/pages/company/app.js"></script>
+</body>
+
+</html>

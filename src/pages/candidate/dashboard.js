@@ -383,7 +383,6 @@ function initProfileModal() {
   };
 
   $("#editProfileBtn")?.addEventListener("click", openEditor);
-  $("#openProfileEditorBtn")?.addEventListener("click", openEditor);
 
   $("#closeProfileModalBtn")?.addEventListener("click", () => $("#profileModal").close());
   $("#cancelProfileBtn")?.addEventListener("click", () => $("#profileModal").close());
@@ -407,7 +406,7 @@ function initLogout() {
     await authLogout();
     window.location.href = "/public/login.html";
   });
-}git 
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {

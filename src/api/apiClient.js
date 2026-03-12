@@ -4,9 +4,10 @@
 
   // const DEFAULT_BASE_URL = window.location.hostname === "localhost"
   //   ? "http://localhost:3005"
-  //   : "matchiq-backend-production.up.railway.app";
+  //   : "https://matchiq-backend-production.up.railway.app";
 
-  const DEFAULT_BASE_URL = "https://matchiq-backend-production.up.railway.app";
+    const DEFAULT_BASE_URL = "https://matchiq-backend-production.up.railway.app";
+
 
   export async function apiFetch(path, options = {}) {
     const url = `${ DEFAULT_BASE_URL }${ path }`;

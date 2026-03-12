@@ -31,7 +31,7 @@ function redirectAfterLogin(user) {
   }
 
   if (role === "admin") window.location.href = "./admin/dashboard.html";
-  else if (role === "company") window.location.href = "./company/dashboard.html";
+  else if (role === "company") window.location.href = "./company/index.html";
   else window.location.href = "./candidate/dashboard.html";
 }
 

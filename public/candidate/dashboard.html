@@ -33,10 +33,6 @@
           <span class="menu__icon">≣</span>
           <span>Ofertas compatibles</span>
         </a>
-        <button class="menu__item menu__item--danger" id="logoutBtn" type="button">
-          <span class="menu__icon">⇠</span>
-          <span>Cerrar sesión</span>
-        </button>
       </nav>
 
       <div class="sidebar__footer">
@@ -45,6 +41,10 @@
           <strong id="profileStatusText">Cargando...</strong>
           <span id="availabilityText">Verificando...</span>
         </div>
+        <button class="menu__item menu__item--danger sidebar__logout" id="logoutBtn" type="button">
+          <span class="menu__icon">⇠</span>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </aside>
 
@@ -83,9 +83,6 @@
             <h3>Tu perfil</h3>
             <p>Información usada para generar tus matches.</p>
           </div>
-          <button class="btn btn--ghost" id="openProfileEditorBtn" type="button">
-            Editar información
-          </button>
         </div>
 
         <div class="alert" id="dashboardAlert" hidden role="alert"></div>
