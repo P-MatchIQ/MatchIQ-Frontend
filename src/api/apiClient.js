@@ -1,28 +1,16 @@
-// ── API Client ──────────────────────────────────────────────────────
-// Wrapper centralizado para llamadas HTTP con autenticación JWT.
-
 if (window.location.hostname === "127.0.0.1") {
   window.location.href = window.location.href.replace("127.0.0.1", "localhost");
 }
 
-const DEFAULT_BASE_URL = window.location.hostname === "localhost"
-  ? "http://localhost:3005"
-  : "https://matchiq-backend-production.up.railway.app";
+const DEFAULT_BASE_URL = "https://matchiq-backend-production.up.railway.app";
 
-/**
- * Cliente HTTP principal. Compatible con ambos nombres: fetchApi y apiFetch.
- * @param {string} path - Ruta relativa (ej: '/offers')
- * @param {object} options  - Opciones de fetch (method, body, etc.)
- * @returns {Promise<any>}
- */
 export async function apiFetch(path, options = {}) {
   const url = `${DEFAULT_BASE_URL}${path}`;
-  const token = localStorage.getItem('token');
 
   const res = await fetch(url, {
+    credentials: "include", // envía la cookie httpOnly automáticamente
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {})
     },
     ...options,
@@ -30,6 +18,7 @@ export async function apiFetch(path, options = {}) {
 
   let data = null;
   const text = await res.text();
+
   try { data = text ? JSON.parse(text) : null; } catch { data = text || null; }
 
   if (!res.ok) {
@@ -45,5 +34,5 @@ export async function apiFetch(path, options = {}) {
   return data;
 }
 
-// Alias: fetchApi === apiFetch (compatibilidad con módulo company)
+// Alias para compatibilidad con módulo company
 export { apiFetch as fetchApi };
