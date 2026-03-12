@@ -34,7 +34,8 @@ export async function initOfferCreate(params = {}) {
     if (isEdit) {
         if (titleEl) titleEl.textContent = 'Edit Offer';
         if (subtitleEl) subtitleEl.textContent = 'Modify the job offer data.';
-        if (submitBtn) submitBtn.textContent = 'Update Offer';
+        const btnText = submitBtn?.querySelector('.btn__text');
+        if (btnText) btnText.textContent = 'Update Offer';
     }
 
     // Cargar categorías del backend
@@ -68,9 +69,14 @@ export async function initOfferCreate(params = {}) {
 
     // Submit handler
     const form = document.getElementById('offer-form');
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+
+        // Prevent double-click
+        submitBtn.classList.add('is-loading');
+        submitBtn.disabled = true;
 
         const data = collectFormData();
         console.log(data);
@@ -86,6 +92,9 @@ export async function initOfferCreate(params = {}) {
             navigateTo('offers');
         } catch (err) {
             showToast(err.message || 'Error saving offer.', 'error');
+        } finally {
+            submitBtn.classList.remove('is-loading');
+            submitBtn.disabled = false;
         }
     });
 }

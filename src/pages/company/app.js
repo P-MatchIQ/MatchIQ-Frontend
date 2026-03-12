@@ -109,5 +109,13 @@ registerRoute('offers/create', './offerCreate.html', initOfferCreate);
 registerRoute('offers', './offers.html', initOffers);
 registerRoute('offers/edit', './offerCreate.html', initOfferCreate);   // reutiliza form
 
+// ── Logout ───────────────────────────────────────────────────────
+document.getElementById('btn-logout')?.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('matchiq_session');
+    sessionStorage.removeItem('matchiq_session');
+    window.location.href = '../login.html';
+});
+
 // ── Iniciar app ──────────────────────────────────────────────────
 startRouter();

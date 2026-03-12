@@ -81,7 +81,10 @@ export async function authLogin({ email, password, remember }) {
       rememberMe: !!remember,
     }),
   });
-  // Solo guardamos el user, el token va en la cookie
+  // Guardar token JWT en localStorage
+  if (response.token) {
+    localStorage.setItem('token', response.token);
+  }
   saveSession(response.user, !!remember);
   return { user: response.user };
 }

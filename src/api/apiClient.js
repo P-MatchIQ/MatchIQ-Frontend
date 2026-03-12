@@ -20,7 +20,6 @@ export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem('token');
 
   const res = await fetch(url, {
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
