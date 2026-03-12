@@ -126,6 +126,10 @@ select{
   margin-top:auto;
 }
 
+.sidebar__logout{
+  margin-top:16px;
+}
+
 .sidebar__label{
   margin:0 0 10px;
   font-size:11px;
