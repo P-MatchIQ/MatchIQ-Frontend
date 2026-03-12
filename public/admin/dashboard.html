@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,6 +10,7 @@
   <title>MatchIQ — Admin Dashboard</title>
   <link rel="stylesheet" href="../../src/styles/adminDashboard.css" />
 </head>
+
 <body>
 
   <!-- ── ASIDE ─────────────────────────────────────────────────────────── -->
@@ -102,7 +104,9 @@
             </tr>
           </thead>
           <tbody id="latest-companies-body">
-            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+            <tr>
+              <td colspan="6" class="table__empty">Cargando...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -118,8 +122,7 @@
       </div>
 
       <div class="toolbar">
-        <input type="text" id="searchCompanies" class="toolbar__search"
-          placeholder="Buscar por nombre o email..." />
+        <input type="text" id="searchCompanies" class="toolbar__search" placeholder="Buscar por nombre o email..." />
         <select id="sortCompanies" class="toolbar__select">
           <option value="recent">Más recientes</option>
           <option value="name">Nombre A-Z</option>
@@ -140,7 +143,9 @@
             </tr>
           </thead>
           <tbody id="companies-body">
-            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+            <tr>
+              <td colspan="6" class="table__empty">Cargando...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -156,8 +161,7 @@
       </div>
 
       <div class="toolbar">
-        <input type="text" id="searchCandidates" class="toolbar__search"
-          placeholder="Buscar por email..." />
+        <input type="text" id="searchCandidates" class="toolbar__search" placeholder="Buscar por email..." />
         <select id="sortCandidates" class="toolbar__select">
           <option value="recent">Más recientes</option>
           <option value="seniority">Seniority</option>
@@ -178,7 +182,9 @@
             </tr>
           </thead>
           <tbody id="candidates-body">
-            <tr><td colspan="6" class="table__empty">Cargando...</td></tr>
+            <tr>
+              <td colspan="6" class="table__empty">Cargando...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -304,4 +310,5 @@
 
   <script type="module" src="../../src/pages/admin/dashboard.js"></script>
 </body>
+
 </html>

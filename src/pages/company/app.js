@@ -1,10 +1,8 @@
-// ── App Controller ──────────────────────────────────────────────
-// Punto de entrada de la SPA. Registra rutas e inicia el router.
-
 import { registerRoute, startRouter } from './router.js';
 import { initDashboard } from './dashboard.js';
 import { initOfferCreate } from './offerCreate.js';
 import { initOffers } from './offers.js';
+import { initProfile } from './profile.js';
 
 // ── Helpers globales ─────────────────────────────────────────────
 
@@ -108,6 +106,7 @@ registerRoute('dashboard', './dashboard.html', initDashboard);
 registerRoute('offers/create', './offerCreate.html', initOfferCreate);
 registerRoute('offers', './offers.html', initOffers);
 registerRoute('offers/edit', './offerCreate.html', initOfferCreate);   // reutiliza form
+registerRoute('profile', './profile.html', initProfile);
 
 import { authLogout } from '../../api/authApi.js';
 
