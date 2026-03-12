@@ -109,5 +109,13 @@ registerRoute('offers/create', './offerCreate.html', initOfferCreate);
 registerRoute('offers', './offers.html', initOffers);
 registerRoute('offers/edit', './offerCreate.html', initOfferCreate);   // reutiliza form
 
+import { authLogout } from '../../api/authApi.js';
+
+// ── Logout ───────────────────────────────────────────────────────
+document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await authLogout(); // limpia cookie httpOnly en el backend + sesión local
+    window.location.href = '../login.html';
+});
+
 // ── Iniciar app ──────────────────────────────────────────────────
 startRouter();

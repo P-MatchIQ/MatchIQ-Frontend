@@ -1,5 +1,8 @@
 import { apiFetch } from "./apiClient.js";
 const SESSION_KEY = "matchiq_session";
+
+// ── Sesión de usuario (solo datos de UI: email, rol) ─────────────
+// El token JWT lo maneja el backend con httpOnly cookie.
 function saveSession(user, remember = true) {
   const storage = remember ? localStorage : sessionStorage;
   storage.setItem(SESSION_KEY, JSON.stringify(user));
@@ -81,7 +84,8 @@ export async function authLogin({ email, password, remember }) {
       rememberMe: !!remember,
     }),
   });
-  // Solo guardamos el user, el token va en la cookie
+  // El backend establece la cookie httpOnly automáticamente.
+  // Solo guardamos los datos del usuario para la UI.
   saveSession(response.user, !!remember);
   return { user: response.user };
 }
@@ -101,6 +105,7 @@ export async function authMe() {
 }
 export async function authLogout() {
   try {
+    // El backend limpia su cookie httpOnly en este endpoint.
     await apiFetch("/auth/logout", { method: "POST" });
   } catch { }
   clearSession();
