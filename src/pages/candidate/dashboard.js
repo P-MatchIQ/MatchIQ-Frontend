@@ -407,7 +407,7 @@ function initLogout() {
     await authLogout();
     window.location.href = "/public/login.html";
   });
-}
+}git 
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
