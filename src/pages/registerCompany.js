@@ -5,7 +5,7 @@ const form          = document.querySelector("form.card");
 const emailInput    = document.getElementById("email");
 const passInput     = document.getElementById("password");
 const confirmInput  = document.getElementById("confirmPassword");
-const submitBtn     = document.querySelector(".btn--primary");
+const submitBtn     = document.getElementById("submitBtn");
 const errorBanner   = document.getElementById("error-banner");
 const successBanner = document.getElementById("success-banner");
 
@@ -29,7 +29,7 @@ function clearBanners() {
 
 function setLoading(isLoading) {
   submitBtn.disabled = isLoading;
-  submitBtn.textContent = isLoading ? "Creating account…" : "Create Corporate Account →";
+  submitBtn.classList.toggle("is-loading", isLoading);
 }
 
 // Submit handler
@@ -46,11 +46,11 @@ form.addEventListener("submit", async (e) => {
   try {
     await registerCompany({ email, password, confirmPassword });
 
-    showSuccess("Corporate account created! Redirecting to your dashboard…");
+    showSuccess("Corporate account created! Redirecting to sign in…");
 
-    // Redirige al dashboard de la empresa tras 1.5s
+    // Redirige al login tras 1.5s (el token se guarda al loguearse)
     setTimeout(() => {
-      window.location.href = "./company/dashboard.html";
+      window.location.href = "./login.html";
     }, 1500);
 
   } catch (error) {

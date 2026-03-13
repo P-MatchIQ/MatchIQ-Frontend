@@ -8,7 +8,13 @@
   <link rel="stylesheet" href="../../src/styles/candidate-dashboard.css" />
 </head>
 <body>
-  <div class="layout">
+  <!-- Full-page loader (visible until JS hides it) -->
+  <div class="page-loader-overlay" id="pageLoader">
+    <div class="page-loader-overlay__spinner"></div>
+    <span class="page-loader-overlay__text">Loading your dashboard…</span>
+  </div>
+
+  <div class="layout" id="mainLayout" style="display: none;">
 
     <!-- ── SIDEBAR ── -->
     <aside class="sidebar">
@@ -33,14 +39,13 @@
           <span class="menu__icon">≣</span>
           <span>Ofertas compatibles</span>
         </a>
+        <a class="menu__item" href="./tests.html">
+          <span class="menu__icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></span>
+          <span>Tests</span>
+        </a>
       </nav>
 
       <div class="sidebar__footer">
-        <p class="sidebar__label">ESTADO DEL PERFIL</p>
-        <div class="status-card">
-          <strong id="profileStatusText">Cargando...</strong>
-          <span id="availabilityText">Verificando...</span>
-        </div>
         <button class="menu__item menu__item--danger sidebar__logout" id="logoutBtn" type="button">
           <span class="menu__icon">⇠</span>
           <span>Cerrar sesión</span>
@@ -64,11 +69,11 @@
       <section class="summary-grid">
         <article class="summary-card">
           <p class="summary-card__label">OFERTAS DISPONIBLES</p>
-          <h3 class="summary-card__value" id="totalOffersValue">—</h3>
+          <h3 class="summary-card__value" id="totalOffersValue"><span class="skeleton skeleton--text"></span></h3>
         </article>
         <article class="summary-card">
           <p class="summary-card__label">MEJOR MATCH</p>
-          <h3 class="summary-card__value" id="bestMatchValue">—</h3>
+          <h3 class="summary-card__value" id="bestMatchValue"><span class="skeleton skeleton--text"></span></h3>
         </article>
         <article class="summary-card summary-card--highlight">
           <p class="summary-card__label">PERFIL COMPLETADO</p>
@@ -87,26 +92,26 @@
 
         <div class="alert" id="dashboardAlert" hidden role="alert"></div>
 
-        <div class="profile-grid">
+        <div class="profile-grid" id="profileGrid">
           <div class="profile-item">
             <span class="profile-item__label">Categorías</span>
-            <div class="tags" id="categoriesTags"></div>
+            <div class="tags" id="categoriesTags"><span class="skeleton skeleton--tag"></span><span class="skeleton skeleton--tag"></span></div>
           </div>
           <div class="profile-item">
             <span class="profile-item__label">Skills</span>
-            <div class="tags" id="skillsTags"></div>
+            <div class="tags" id="skillsTags"><span class="skeleton skeleton--tag"></span><span class="skeleton skeleton--tag"></span><span class="skeleton skeleton--tag"></span></div>
           </div>
           <div class="profile-item">
             <span class="profile-item__label">Experiencia</span>
-            <strong id="experienceValue">-</strong>
+            <strong id="experienceValue"><span class="skeleton skeleton--text"></span></strong>
           </div>
           <div class="profile-item">
             <span class="profile-item__label">Inglés</span>
-            <strong id="englishValue">-</strong>
+            <strong id="englishValue"><span class="skeleton skeleton--text"></span></strong>
           </div>
           <div class="profile-item">
             <span class="profile-item__label">Seniority</span>
-            <strong id="seniorityValue">-</strong>
+            <strong id="seniorityValue"><span class="skeleton skeleton--text"></span></strong>
           </div>
         </div>
       </section>
@@ -119,8 +124,16 @@
             <p>Próximamente — sistema de matching en desarrollo.</p>
           </div>
         </div>
-        <div class="empty-state" id="offersEmpty">
-          Aún no hay ofertas disponibles. Completa tu perfil para empezar a recibir matches.
+        <div id="offersContainer">
+          <div class="loading-state" id="offersLoading">
+            <div class="inline-loader">
+              <div class="inline-loader__spinner"></div>
+              <span>Buscando ofertas compatibles…</span>
+            </div>
+          </div>
+          <div class="empty-state" id="offersEmpty" style="display: none;">
+            Aún no hay ofertas disponibles. Completa tu perfil para empezar a recibir matches.
+          </div>
         </div>
       </section>
     </main>

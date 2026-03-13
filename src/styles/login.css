@@ -1,18 +1,21 @@
 :root{
-  --bg-900: #021024;
-  --bg-800: #052659;
-  --blue-500:#5483B3;
-  --blue-300:#7DA0CA;
-  --blue-100:#C1E8FF;
+  --bg-900: #0f2537;
+  --bg-800: #1a3a5c;
+  --blue-500:#4a7fa8;
+  --blue-300:#7ba4c7;
+  --blue-100:#d6eeff;
 
-  --text-900: #021024;
-  --text-700: rgba(2, 16, 36, 0.72);
-  --text-600: rgba(2, 16, 36, 0.62);
+  --emerald: #34d399;
+  --emerald-dark: #10b981;
+
+  --text-900: #0f2537;
+  --text-700: rgba(15, 37, 55, 0.72);
+  --text-600: rgba(15, 37, 55, 0.62);
 
   --card: #ffffff;
   --border: rgba(125, 160, 202, 0.35);
 
-  --shadow: 0 20px 60px rgba(2, 16, 36, 0.12);
+  --shadow: 0 20px 60px rgba(15, 37, 55, 0.12);
   --radius-xl: 26px;
 }
 
@@ -174,12 +177,12 @@ input:focus{
 }
 
 .btn--primary{
-  background:linear-gradient(180deg,var(--bg-800),var(--bg-900));
+  background:linear-gradient(180deg,var(--emerald),var(--emerald-dark));
   color:white;
   font-size:16px;
 }
 
-.btn--primary:hover{ filter:brightness(1.05); }
+.btn--primary:hover{ filter:brightness(1.08); }
 
 .btn--ghost{
   background: rgba(255,255,255,0.75);

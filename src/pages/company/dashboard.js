@@ -22,7 +22,12 @@ function isActiveOffer(offer) {
  * Inicializa la vista del Dashboard.
  */
 export async function initDashboard() {
+    const container = document.getElementById('app') || document.querySelector('.main');
+
+    // Show loader
+    const loader = container?.querySelector('.page-loader');
     const offers = await getOffers();
+    if (loader) loader.remove();
 
     const active = offers.filter(o => isActiveOffer(o)).length;
     const closed = offers.filter(o => o.status === 'closed').length;

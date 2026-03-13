@@ -22,6 +22,16 @@ let filter = 'all';
  * Inicializa la vista de lista de ofertas.
  */
 export async function initOffers() {
+    // Show loader in container
+    const container = document.getElementById('offers-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="page-loader" style="grid-column: 1 / -1;">
+                <div class="page-loader__spinner"></div>
+                <span class="page-loader__text">Loading offers…</span>
+            </div>`;
+    }
+
     allOffers = await getOffers();
     filter = 'all';
 
@@ -117,6 +127,7 @@ function renderOfferCard(offer) {
 
         ${isActiveOffer(offer) ? `
         <div class="offer-card__actions">
+            <a href="#/matches/${offer.id}" class="btn btn--ghost btn--sm" onclick="event.stopPropagation()">Find Matches</a>
             <a href="#/offers/edit/${offer.id}" class="btn btn--ghost btn--sm">Edit</a>
             <button class="btn btn--warning btn--sm" data-action="close" data-id="${offer.id}">Close</button>
             <button class="btn btn--danger btn--sm" data-action="cancel" data-id="${offer.id}">Cancel</button>

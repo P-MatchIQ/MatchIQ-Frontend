@@ -2,6 +2,7 @@ import { registerRoute, startRouter } from './router.js';
 import { initDashboard } from './dashboard.js';
 import { initOfferCreate } from './offerCreate.js';
 import { initOffers } from './offers.js';
+import { initMatches } from './matches.js';
 import { initProfile } from './profile.js';
 
 // ── Helpers globales ─────────────────────────────────────────────
@@ -106,6 +107,7 @@ registerRoute('dashboard', './dashboard.html', initDashboard);
 registerRoute('offers/create', './offerCreate.html', initOfferCreate);
 registerRoute('offers', './offers.html', initOffers);
 registerRoute('offers/edit', './offerCreate.html', initOfferCreate);   // reutiliza form
+registerRoute('matches', './matches.html', initMatches);
 registerRoute('profile', './profile.html', initProfile);
 
 import { authLogout } from '../../api/authApi.js';

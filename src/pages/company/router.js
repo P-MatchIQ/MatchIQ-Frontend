@@ -9,6 +9,8 @@ const routes = new Map();
 
 /** @type {string} */
 let currentRoute = '';
+/** @type {string} */
+let currentParams = '';
 
 /**
  * Registra una ruta con su fragmento HTML y función de inicialización.
@@ -41,6 +43,12 @@ function parseHash() {
         return { path: 'offers/edit', params: { id: editMatch[1] } };
     }
 
+    // Match con rutas de matching: matches/:offerId
+    const matchRoute = hash.match(/^matches\/(.+)$/);
+    if (matchRoute) {
+        return { path: 'matches', params: { id: matchRoute[1] } };
+    }
+
     return { path: hash, params: {} };
 }
 
@@ -50,9 +58,11 @@ function parseHash() {
 async function resolve() {
     const { path, params } = parseHash();
 
-    // Evitar recargar la misma ruta
-    if (path === currentRoute && Object.keys(params).length === 0) return;
+    // Evitar recargar la misma ruta con los mismos params
+    const paramsKey = JSON.stringify(params);
+    if (path === currentRoute && paramsKey === currentParams) return;
     currentRoute = path;
+    currentParams = paramsKey;
 
     const route = routes.get(path);
     if (!route) {
@@ -66,10 +76,18 @@ async function resolve() {
         return;
     }
 
+    const container = document.getElementById(APP_CONTAINER_ID);
+
+    // Show loader while fetching
+    container.innerHTML = `
+        <div class="page-loader">
+            <div class="page-loader__spinner"></div>
+            <span class="page-loader__text">Loading…</span>
+        </div>`;
+
     try {
         const response = await fetch(route.html);
         const html = await response.text();
-        const container = document.getElementById(APP_CONTAINER_ID);
         container.innerHTML = html;
         container.classList.remove('view-enter');
         // Trigger reflow for animation

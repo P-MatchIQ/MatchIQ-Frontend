@@ -92,8 +92,10 @@ function renderProfile(profile) {
 
   const completeness = calculateCompleteness(profile);
   $("#profileCompletenessValue").textContent = `${completeness}%`;
-  $("#profileStatusText").textContent = completeness === 100 ? "Perfil completo" : "Perfil incompleto";
-  $("#availabilityText").textContent = completeness === 100 ? "Listo para matching" : "Completa tu perfil";
+
+  // Summary cards — clear skeletons
+  $("#totalOffersValue").textContent = "—";
+  $("#bestMatchValue").textContent = "—";
 
   renderTags($("#categoriesTags"), (profile.categories || []).map((c) => c.name));
   renderTags($("#skillsTags"), (profile.skills || []).map((s) => s.name));
@@ -395,7 +397,10 @@ function initProfileModal() {
 
   $("#profileForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const saveBtn = $("#saveProfileBtn");
+    saveBtn?.classList.add("btn--loading");
     const ok = await saveProfile();
+    saveBtn?.classList.remove("btn--loading");
     if (ok) $("#profileModal").close();
   });
 }
@@ -415,19 +420,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   state.user = user;
 
-  const [profile, categories] = await Promise.all([
-    getCandidateProfile(),
-    getCategories(),
-  ]);
+  try {
+    const [profile, categories] = await Promise.all([
+      getCandidateProfile(),
+      getCategories(),
+    ]);
 
-  console.log("PERFIL:", JSON.stringify(profile, null, 2));
+    console.log("PERFIL:", JSON.stringify(profile, null, 2));
 
-  state.profile = profile;
-  state.categories = categories;
+    state.profile = profile;
+    state.categories = categories;
 
-  renderProfile(profile);
+    renderProfile(profile);
+  } catch (err) {
+    console.error("Error loading profile:", err);
+    setAlert($("#dashboardAlert"), "Error cargando tu perfil: " + (err.message || "Intenta de nuevo."), "error");
+  }
 
-  if (!isProfileComplete(profile)) {
+  // Hide offers loader, show empty state
+  const offersLoading = document.getElementById("offersLoading");
+  const offersEmpty = document.getElementById("offersEmpty");
+  if (offersLoading) offersLoading.style.display = "none";
+  if (offersEmpty) offersEmpty.style.display = "";
+
+  // Hide page loader, show main layout
+  const pageLoader = document.getElementById("pageLoader");
+  const mainLayout = document.getElementById("mainLayout");
+  if (pageLoader) pageLoader.remove();
+  if (mainLayout) mainLayout.style.display = "";
+
+  if (state.profile && !isProfileComplete(state.profile)) {
     initOnboarding();
     showOnboarding();
   }

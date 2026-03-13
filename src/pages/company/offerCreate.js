@@ -26,6 +26,10 @@ export async function initOfferCreate(params = {}) {
 
     const isEdit = !!params.id;
 
+    // Show loader while data loads
+    const form = document.getElementById('offer-form');
+    if (form) form.style.opacity = '0';
+
     // Títulos
     const titleEl = document.getElementById('form-title');
     const subtitleEl = document.getElementById('form-subtitle');
@@ -67,9 +71,13 @@ export async function initOfferCreate(params = {}) {
         }
     }
 
-    // Submit handler
-    const form = document.getElementById('offer-form');
+    // Show form after data loads
+    if (form) {
+        form.style.opacity = '1';
+        form.style.transition = 'opacity 0.3s ease';
+    }
 
+    // Submit handler
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
