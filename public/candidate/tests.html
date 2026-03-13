@@ -1,146 +1,81 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>MatchIQ · Tests Pendientes</title>
-  <link rel="stylesheet" href="../../src/styles/candidate-dashboard.css" />
-</head>
-<body>
-  <!-- Full-page loader -->
-  <div class="page-loader-overlay" id="pageLoader">
-    <div class="page-loader-overlay__spinner"></div>
-    <span class="page-loader-overlay__text">Cargando tests…</span>
-  </div>
+<!-- ─── Tests Fragment ─── -->
+<header class="main__header">
+    <div>
+        <h1>Pending Tests</h1>
+        <p class="muted">Complete the tests that companies have sent you.</p>
+    </div>
+</header>
 
-  <div class="layout" id="mainLayout" style="display: none;">
-
-    <!-- ── SIDEBAR ── -->
-    <aside class="sidebar">
-      <div class="brand">
-        <img class="brand__logo" src="../../src/assets/iconoMatchIQ-Imag.png" alt="MatchIQ logo" />
-        <div>
-          <h1 class="brand__title">MatchIQ</h1>
-          <p class="brand__subtitle">Smart Connections for Developers</p>
-        </div>
-      </div>
-
-      <nav class="menu">
-        <a class="menu__item" href="./dashboard.html">
-          <span class="menu__icon">▣</span>
-          <span>Dashboard</span>
-        </a>
-        <button class="menu__item" id="editProfileBtn" type="button">
-          <span class="menu__icon">✎</span>
-          <span>Editar perfil</span>
-        </button>
-        <a class="menu__item menu__item--active" href="./tests.html">
-          <span class="menu__icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></span>
-          <span>Tests</span>
-        </a>
-      </nav>
-
-      <div class="sidebar__footer">
-        <button class="menu__item menu__item--danger sidebar__logout" id="logoutBtn" type="button">
-          <span class="menu__icon">⇠</span>
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- ── MAIN ── -->
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h2 class="page-title">Tests Pendientes</h2>
-          <p class="page-subtitle">Resuelve los tests que las empresas te han enviado.</p>
-        </div>
-        <div class="topbar__actions">
-          <span class="welcome" id="welcomeText">Bienvenido</span>
-        </div>
-      </header>
-
-      <!-- Tests List View -->
-      <section id="testsListView">
-        <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr);">
-          <article class="summary-card">
-            <p class="summary-card__label">TESTS PENDIENTES</p>
+<!-- Tests List View -->
+<section id="testsListView">
+    <div class="summary-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+        <article class="summary-card">
+            <p class="summary-card__label">PENDING TESTS</p>
             <h3 class="summary-card__value" id="pendingCount">0</h3>
-          </article>
-          <article class="summary-card summary-card--highlight">
-            <p class="summary-card__label">TESTS COMPLETADOS</p>
+        </article>
+        <article class="summary-card summary-card--highlight">
+            <p class="summary-card__label">COMPLETED TESTS</p>
             <h3 class="summary-card__value" id="completedCount">0</h3>
-          </article>
-        </div>
+        </article>
+    </div>
 
-        <div class="panel">
-          <div class="panel__head">
+    <div class="panel">
+        <div class="panel__head">
             <div>
-              <h3>Tests asignados</h3>
-              <p>Haz clic en "Resolver" para comenzar un test.</p>
+                <h3>Assigned tests</h3>
+                <p>Click "Solve" to start a test.</p>
             </div>
-          </div>
-          <div id="testsContainer">
-            <div class="empty-state">No tienes tests pendientes.</div>
-          </div>
         </div>
-      </section>
+        <div id="testsContainer">
+            <div class="empty-state">No pending tests.</div>
+        </div>
+    </div>
+</section>
 
-      <!-- Test Taking View (hidden by default) -->
-      <section id="testTakingView" style="display: none;">
-        <div class="test-header-bar">
-          <button class="btn btn--ghost" id="backToListBtn">← Volver</button>
-          <div class="test-header-bar__info">
+<!-- Test Taking View (hidden by default) -->
+<section id="testTakingView" style="display: none;">
+    <div class="test-header-bar">
+        <button class="btn btn--ghost" id="backToListBtn">← Back</button>
+        <div class="test-header-bar__info">
             <h3 id="testTitle">Test</h3>
             <span class="test-timer" id="testTimer">30:00</span>
-          </div>
         </div>
+    </div>
 
-        <div class="test-progress">
-          <div class="test-progress__bar" id="testProgressBar" style="width: 0%"></div>
-        </div>
+    <div class="test-progress">
+        <div class="test-progress__bar" id="testProgressBar" style="width: 0%"></div>
+    </div>
 
-        <div id="testQuestionsContainer">
-          <!-- Questions rendered by JS -->
-        </div>
+    <div id="testQuestionsContainer">
+        <!-- Questions rendered by JS -->
+    </div>
 
-        <div class="test-actions" style="margin-top: 24px;">
-          <button class="btn btn--primary btn--full" id="submitTestBtn" disabled>
-            Enviar respuestas
-          </button>
-        </div>
-      </section>
 
-      <!-- Test Results View (hidden by default) -->
-      <section id="testResultsView" style="display: none;">
-        <div class="panel" style="text-align: center; padding: 40px;">
-          <div id="resultIcon" style="margin-bottom: 16px;"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="var(--emerald-dark)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div>
-          <h2 id="resultTitle">Resultados del Test</h2>
-          <p class="page-subtitle" id="resultSubtitle" style="margin-bottom: 24px;"></p>
+    <!-- Navigation and submit rendered by JS inside testQuestionsContainer -->
+</section>
 
-          <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+<!-- Test Results View (hidden by default) -->
+<section id="testResultsView" style="display: none;">
+    <div class="panel" style="text-align: center; padding: 40px;">
+        <div id="resultIcon" style="margin-bottom: 16px;"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="var(--emerald-dark)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div>
+        <h2 id="resultTitle">Test Results</h2>
+        <p class="page-subtitle" id="resultSubtitle" style="margin-bottom: 24px;"></p>
+
+        <div class="summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
             <article class="summary-card">
-              <p class="summary-card__label">PUNTUACIÓN</p>
-              <h3 class="summary-card__value" id="resultScore">—</h3>
+                <p class="summary-card__label">SCORE</p>
+                <h3 class="summary-card__value" id="resultScore">—</h3>
             </article>
             <article class="summary-card">
-              <p class="summary-card__label">CORRECTAS</p>
-              <h3 class="summary-card__value" id="resultCorrect">—</h3>
+                <p class="summary-card__label">CORRECT</p>
+                <h3 class="summary-card__value" id="resultCorrect">—</h3>
             </article>
             <article class="summary-card summary-card--highlight">
-              <p class="summary-card__label">ATENCIÓN</p>
-              <h3 class="summary-card__value" id="resultAttention">—</h3>
+                <p class="summary-card__label">ATTENTION</p>
+                <h3 class="summary-card__value" id="resultAttention">—</h3>
             </article>
-          </div>
-
-          <button class="btn btn--primary" id="backToTestsBtn">Volver a Tests</button>
         </div>
-      </section>
 
-    </main>
-  </div>
-
-  <script type="module" src="../../src/pages/candidate/tests.js"></script>
-</body>
-</html>
+        <button class="btn btn--primary" id="backToTestsBtn">Back to Tests</button>
+    </div>
+</section>

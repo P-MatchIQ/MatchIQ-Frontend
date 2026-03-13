@@ -111,6 +111,27 @@ body {
     0 10px 30px rgba(2,16,36,0.1);
 }
 
+.card__header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(125,160,202,0.2);
+}
+
+.card__header .auth__title {
+  font-size: 24px;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+  color: var(--bg-800);
+}
+
+.card__header .auth__subtitle {
+  color: var(--text-700);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 /* Section badge */
 .section {
   margin-bottom: 30px;

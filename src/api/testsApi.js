@@ -68,58 +68,28 @@ export async function getCandidateSubmission(testId, candidateId) {
     return res.submission;
 }
 
-// ── localStorage helpers for test assignments ────────────────────
-const STORAGE_KEY = 'matchiq_test_assignments';
+// ── Test invitations (persisted in DB via backend) ───────────
 
 /**
- * Mark a test as "sent" to a candidate (stores in localStorage).
- * @param {{ offerId: string, offerTitle: string, candidateId: string, candidateName: string, testId: string, companyName: string }} data
- */
-export function assignTestToCandidate(data) {
-    const existing = getTestAssignments();
-    // Prevent duplicates
-    const key = `${data.offerId}__${data.candidateId}`;
-    if (existing.some(a => `${a.offerId}__${a.candidateId}` === key)) return false;
-    existing.push({ ...data, sentAt: new Date().toISOString(), status: 'pending' });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-    return true;
-}
-
-/**
- * Get all test assignments from localStorage.
- * @returns {Array}
- */
-export function getTestAssignments() {
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
-}
-
-/**
- * Get test assignments for a specific candidate.
- * Matches by candidateId OR candidateEmail (since user.id ≠ candidate_id).
- * @param {string} candidateId
- * @param {string} [email]
- * @returns {Array}
- */
-export function getTestsForCandidate(candidateId, email) {
-    return getTestAssignments().filter(a =>
-        a.candidateId === candidateId ||
-        (email && a.candidateEmail && a.candidateEmail.toLowerCase() === email.toLowerCase())
-    );
-}
-
-/**
- * Mark a test assignment as completed.
+ * Invite a candidate to take a test for an offer (Company action).
+ * POST /tests/job-offers/:offerId/invite
  * @param {string} offerId
  * @param {string} candidateId
+ * @returns {Promise<object>}
  */
-export function markTestCompleted(offerId, candidateId) {
-    const all = getTestAssignments();
-    const idx = all.findIndex(a => a.offerId === offerId && a.candidateId === candidateId);
-    if (idx !== -1) {
-        all[idx].status = 'completed';
-        all[idx].completedAt = new Date().toISOString();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-    }
+export async function inviteCandidate(offerId, candidateId) {
+    return apiFetch(`/tests/job-offers/${offerId}/invite`, {
+        method: 'POST',
+        body: JSON.stringify({ candidate_id: candidateId }),
+    });
+}
+
+/**
+ * Get all test invitations for the logged-in candidate.
+ * GET /tests/my-invitations
+ * @returns {Promise<Array>}
+ */
+export async function getMyInvitations() {
+    const res = await apiFetch('/tests/my-invitations');
+    return res.invitations || res.data || res || [];
 }

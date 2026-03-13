@@ -1,4 +1,4 @@
-import { authMe, authLogout } from "../../api/authApi.js";
+import { authMe } from "../../api/authApi.js";
 import {
   getCandidateProfile,
   updateCandidateProfile,
@@ -7,10 +7,11 @@ import {
   getCategories,
   getSkillsByCategory,
 } from "../../api/candidateApi.js";
+import { getMyInvitations } from "../../api/testsApi.js";
 
 const $ = (sel) => document.querySelector(sel);
 
-// ── Estado global ─────────────────────────────────────────────────────────────
+// ── Global state ─────────────────────────────────────────────────────────────────────
 const state = {
   user: null,
   profile: null,
@@ -20,30 +21,12 @@ const state = {
   selectedSkills: [],
 };
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
+// ── Utilities ────────────────────────────────────────────────────────────────
 function setAlert(el, message, type = "info") {
   if (!el) return;
   el.hidden = !message;
   el.textContent = message || "";
   el.className = `alert${type === "error" ? " is-error" : ""}`;
-}
-
-function renderTags(container, values = []) {
-  if (!container) return;
-  container.innerHTML = "";
-  if (!values.length) {
-    const span = document.createElement("span");
-    span.className = "tag";
-    span.textContent = "No definido";
-    container.appendChild(span);
-    return;
-  }
-  values.forEach((v) => {
-    const span = document.createElement("span");
-    span.className = "tag";
-    span.textContent = v;
-    container.appendChild(span);
-  });
 }
 
 function calculateCompleteness(profile) {
@@ -69,39 +52,121 @@ function isProfileComplete(profile) {
   );
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-async function ensureCandidateAccess() {
-  const me = await authMe();
-  if (!me?.authenticated || !me?.user) {
-    window.location.href = "/public/login.html";
-    return null;
-  }
-  if (me.user.role !== "candidate") {
-    window.location.href = "/public/login.html";
-    return null;
-  }
-  return me.user;
-}
 
-// ── Render perfil ─────────────────────────────────────────────────────────────
-function renderProfile(profile) {
-  $("#welcomeText").textContent = `Hola, ${profile.first_name || "Candidato"}`;
-  $("#experienceValue").textContent = profile.experience_years != null ? `${profile.experience_years} años` : "-";
-  $("#englishValue").textContent = profile.english_level || "-";
-  $("#seniorityValue").textContent = profile.seniority || "-";
+
+// ── Render dashboard stats ────────────────────────────────────────────────────
+function renderDashboard(profile) {
+  $("#welcomeText").textContent = `Hello, ${profile.first_name || "Candidate"}`;
 
   const completeness = calculateCompleteness(profile);
   $("#profileCompletenessValue").textContent = `${completeness}%`;
-
-  // Summary cards — clear skeletons
-  $("#totalOffersValue").textContent = "—";
-  $("#bestMatchValue").textContent = "—";
-
-  renderTags($("#categoriesTags"), (profile.categories || []).map((c) => c.name));
-  renderTags($("#skillsTags"), (profile.skills || []).map((s) => s.name));
 }
 
-// ── Catálogo ──────────────────────────────────────────────────────────────────
+// ── Time ago helper ───────────────────────────────────────────────────────────
+function timeAgo(dateStr) {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString("en");
+}
+
+// ── Render Pending Tests ──────────────────────────────────────────────────────
+function renderPendingTests(assignments) {
+  const pending = assignments.filter(a => a.status === "pending");
+  const completed = assignments.filter(a => a.status === "completed");
+
+  // Update stat cards
+  $("#pendingTestsValue").textContent = pending.length;
+  $("#completedTestsValue").textContent = completed.length;
+
+  // Hide loader
+  const loader = $("#pendingTestsLoader");
+  if (loader) loader.style.display = "none";
+
+  if (!pending.length) {
+    const empty = $("#pendingTestsEmpty");
+    if (empty) empty.style.display = "";
+    const container = $("#pendingTestCards");
+    if (container) container.style.display = "none";
+    return;
+  }
+
+  const container = $("#pendingTestCards");
+  if (!container) return;
+  container.style.display = "";
+
+  container.innerHTML = pending.map(t => {
+    const title = t.offer_title || t.offerTitle || "Technical test";
+    const company = t.company_name || t.companyName || "Company";
+    const dateVal = t.assigned_at || t.created_at || t.sentAt;
+    return `
+    <a class="test-card" href="#/tests">
+      <div class="test-card__icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      </div>
+      <div class="test-card__body">
+        <strong class="test-card__title">${title}</strong>
+        <span class="test-card__meta">${company} · ${dateVal ? timeAgo(dateVal) : 'Recently'}</span>
+      </div>
+      <span class="test-card__badge test-card__badge--pending">Pending</span>
+    </a>
+  `;}).join("");
+}
+
+// ── Render Activity Feed ──────────────────────────────────────────────────────
+function renderActivityFeed(assignments) {
+  const loader = $("#activityLoader");
+  if (loader) loader.style.display = "none";
+
+  if (!assignments.length) {
+    const empty = $("#activityEmpty");
+    if (empty) empty.style.display = "";
+    return;
+  }
+
+  const feed = $("#activityFeed");
+  if (!feed) return;
+  feed.style.display = "";
+
+  // Helper to get the most relevant date for sorting
+  const getDate = (t) => t.completed_at || t.assigned_at || t.created_at || t.sentAt || "";
+
+  // Sort by date descending, take last 10
+  const sorted = [...assignments].sort((a, b) => new Date(getDate(b)) - new Date(getDate(a))).slice(0, 10);
+
+  feed.innerHTML = sorted.map(t => {
+    const isCompleted = t.status === "completed";
+    const title = t.offer_title || t.offerTitle || "an offer";
+    const company = t.company_name || t.companyName || "A company";
+    const icon = isCompleted
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+    const statusClass = isCompleted ? "activity-item--completed" : "activity-item--pending";
+    const dateStr = getDate(t);
+    const message = isCompleted
+      ? `You completed the test from <strong>${company}</strong> for <strong>${title}</strong>`
+      : `<strong>${company}</strong> sent you a test for <strong>${title}</strong>`;
+
+    return `
+      <div class="activity-item ${statusClass}">
+        <div class="activity-item__icon">${icon}</div>
+        <div class="activity-item__body">
+          <p class="activity-item__text">${message}</p>
+          <span class="activity-item__time">${dateStr ? timeAgo(dateStr) : 'Recently'}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ── Catalog ────────────────────────────────────────────────────────────────────────
 async function loadSkillsForCategories(categoryIds) {
   const skillsMap = {};
   await Promise.all(
@@ -113,8 +178,8 @@ async function loadSkillsForCategories(categoryIds) {
   return Object.values(skillsMap);
 }
 
-// ── Picker de categorías ──────────────────────────────────────────────────────
-function renderCategoriesPicker(containerId = "categoriesPicker") {
+// ── Category picker (onboarding) ─────────────────────────────────────────────────
+function renderCategoriesPicker(containerId) {
   const container = $(`#${containerId}`);
   if (!container) return;
   container.innerHTML = "";
@@ -155,8 +220,8 @@ function renderCategoriesPicker(containerId = "categoriesPicker") {
   });
 }
 
-// ── Picker de skills ──────────────────────────────────────────────────────────
-function renderSkillsPicker(containerId = "skillsPicker") {
+// ── Picker de skills (onboarding) ─────────────────────────────────────────────
+function renderSkillsPicker(containerId) {
   const container = $(`#${containerId}`);
   if (!container) return;
   container.innerHTML = "";
@@ -166,7 +231,7 @@ function renderSkillsPicker(containerId = "skillsPicker") {
   if (!state.allSkills.length) {
     const empty = document.createElement("div");
     empty.className = "picker-empty";
-    empty.textContent = "Selecciona al menos una categoría para ver sus skills.";
+    empty.textContent = "Select at least one category to see its skills.";
     container.appendChild(empty);
     return;
   }
@@ -208,78 +273,11 @@ function renderSkillsPicker(containerId = "skillsPicker") {
   });
 }
 
-function updateSkillsCounter(counterId = "skillsCounter") {
+function updateSkillsCounter(counterId) {
   const counter = $(`#${counterId}`);
   if (!counter) return;
   const total = state.selectedSkills.length;
-  counter.textContent = `${total} skill${total !== 1 ? "s" : ""} seleccionado${total !== 1 ? "s" : ""}`;
-}
-
-// ── Llenar formulario de perfil ───────────────────────────────────────────────
-async function fillProfileForm() {
-  const profile = state.profile;
-
-  $("#firstNameInput").value = profile.first_name || "";
-  $("#lastNameInput").value = profile.last_name || "";
-  $("#experienceInput").value = profile.experience_years ?? "";
-  $("#englishInput").value = profile.english_level || "";
-  $("#seniorityInput").value = profile.seniority || "";
-
-  state.selectedCategories = (profile.categories || []).map((c) => ({ id: c.id, name: c.name }));
-
-  const categoryIds = state.selectedCategories.map((c) => c.id);
-  state.allSkills = categoryIds.length ? await loadSkillsForCategories(categoryIds) : [];
-
-  state.selectedSkills = (profile.skills || []).map((s) => ({
-    skill_id: s.id,
-    name: s.name,
-    level: s.level || 3,
-    category_id: s.category_id,
-  }));
-
-  renderCategoriesPicker("categoriesPicker");
-  renderSkillsPicker("skillsPicker");
-  updateSkillsCounter("skillsCounter");
-}
-
-// ── Guardar perfil ────────────────────────────────────────────────────────────
-async function saveProfile() {
-  const alertEl = $("#profileFormAlert");
-  setAlert(alertEl, "");
-
-  const first_name = $("#firstNameInput")?.value.trim();
-  const last_name = $("#lastNameInput")?.value.trim();
-  const experience_years = Number($("#experienceInput")?.value);
-  const english_level = $("#englishInput")?.value;
-  const seniority = $("#seniorityInput")?.value;
-
-  if (!first_name || !last_name) {
-    setAlert(alertEl, "Nombre y apellido son obligatorios.", "error");
-    return false;
-  }
-
-  if (!state.selectedCategories.length) {
-    setAlert(alertEl, "Selecciona al menos una categoría.", "error");
-    return false;
-  }
-
-  if (!state.selectedSkills.length) {
-    setAlert(alertEl, "Selecciona al menos un skill.", "error");
-    return false;
-  }
-
-  try {
-    await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority });
-    await updateCandidateCategories(state.selectedCategories.map((c) => c.id));
-    await updateCandidateSkills(state.selectedSkills.map((s) => ({ skill_id: s.skill_id, level: s.level })));
-
-    state.profile = await getCandidateProfile();
-    renderProfile(state.profile);
-    return true;
-  } catch (err) {
-    setAlert(alertEl, err.message || "Error guardando perfil.", "error");
-    return false;
-  }
+  counter.textContent = `${total} skill${total !== 1 ? "s" : ""} selected`;
 }
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
@@ -303,14 +301,14 @@ function initOnboarding() {
 
   goToStep(0);
 
-  // Paso 1 → 2
+  // Step 1 → 2
   $("#ob_nextStep1")?.addEventListener("click", async () => {
     const alertEl = $("#onboardingAlert");
     const first_name = $("#ob_firstName")?.value.trim();
     const last_name = $("#ob_lastName")?.value.trim();
 
     if (!first_name || !last_name) {
-      setAlert(alertEl, "Nombre y apellido son obligatorios.", "error");
+      setAlert(alertEl, "Please enter your first and last name.", "error");
       return;
     }
 
@@ -323,12 +321,12 @@ function initOnboarding() {
     renderCategoriesPicker("ob-categoriesPicker");
   });
 
-  // Paso 2 → 3
+  // Step 2 → 3
   $("#ob_nextStep2")?.addEventListener("click", async () => {
     const alertEl = $("#onboardingAlert");
 
     if (!state.selectedCategories.length) {
-      setAlert(alertEl, "Selecciona al menos una categoría.", "error");
+      setAlert(alertEl, "Please select at least one category to continue.", "error");
       return;
     }
 
@@ -340,12 +338,12 @@ function initOnboarding() {
     updateSkillsCounter("ob-skillsCounter");
   });
 
-  // Paso 3 → guardar
+  // Step 3 → save
   $("#ob_saveBtn")?.addEventListener("click", async () => {
     const alertEl = $("#onboardingAlert");
 
     if (!state.selectedSkills.length) {
-      setAlert(alertEl, "Selecciona al menos un skill.", "error");
+      setAlert(alertEl, "Please select at least one skill to continue.", "error");
       return;
     }
 
@@ -361,14 +359,14 @@ function initOnboarding() {
       await updateCandidateSkills(state.selectedSkills.map((s) => ({ skill_id: s.skill_id, level: s.level })));
 
       state.profile = await getCandidateProfile();
-      renderProfile(state.profile);
+      renderDashboard(state.profile);
       hideOnboarding();
     } catch (err) {
-      setAlert(alertEl, err.message || "Error guardando perfil.", "error");
+      setAlert(alertEl, err.message || "Something went wrong while saving your profile. Please try again.", "error");
     }
   });
 
-  // Limpiar skills en onboarding
+  // Clear skills in onboarding
   $("#ob-clearSkillsBtn")?.addEventListener("click", () => {
     state.selectedSkills = [];
     renderSkillsPicker("ob-skillsPicker");
@@ -376,47 +374,26 @@ function initOnboarding() {
   });
 }
 
-// ── MODAL DE EDICIÓN ──────────────────────────────────────────────────────────
-function initProfileModal() {
-  const openEditor = async () => {
-    setAlert($("#profileFormAlert"), "");
-    await fillProfileForm();
-    $("#profileModal").showModal();
-  };
 
-  $("#editProfileBtn")?.addEventListener("click", openEditor);
-
-  $("#closeProfileModalBtn")?.addEventListener("click", () => $("#profileModal").close());
-  $("#cancelProfileBtn")?.addEventListener("click", () => $("#profileModal").close());
-
-  $("#clearSkillsBtn")?.addEventListener("click", () => {
-    state.selectedSkills = [];
-    renderSkillsPicker("skillsPicker");
-    updateSkillsCounter("skillsCounter");
-  });
-
-  $("#profileForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const saveBtn = $("#saveProfileBtn");
-    saveBtn?.classList.add("btn--loading");
-    const ok = await saveProfile();
-    saveBtn?.classList.remove("btn--loading");
-    if (ok) $("#profileModal").close();
-  });
-}
-
-// ── LOGOUT ────────────────────────────────────────────────────────────────────
-function initLogout() {
-  $("#logoutBtn")?.addEventListener("click", async () => {
-    await authLogout();
-    window.location.href = "/public/login.html";
-  });
-}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", async () => {
-  const user = await ensureCandidateAccess();
-  if (!user) return;
+export async function initDashboard() {
+  let user = window.__candidateUser;
+  if (!user) {
+    try {
+      const me = await authMe();
+      if (me?.authenticated && me?.user?.role === 'candidate') {
+        user = me.user;
+        window.__candidateUser = user;
+      } else {
+        window.location.href = '../login.html';
+        return;
+      }
+    } catch {
+      window.location.href = '../login.html';
+      return;
+    }
+  }
 
   state.user = user;
 
@@ -426,34 +403,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       getCategories(),
     ]);
 
-    console.log("PERFIL:", JSON.stringify(profile, null, 2));
-
     state.profile = profile;
     state.categories = categories;
 
-    renderProfile(profile);
+    renderDashboard(profile);
   } catch (err) {
     console.error("Error loading profile:", err);
-    setAlert($("#dashboardAlert"), "Error cargando tu perfil: " + (err.message || "Intenta de nuevo."), "error");
+    const alertEl = $("#dashboardAlert");
+    if (alertEl) {
+      alertEl.hidden = false;
+      alertEl.textContent = "We couldn't load your profile. Please refresh the page and try again.";
+      alertEl.className = "alert is-error";
+    }
   }
-
-  // Hide offers loader, show empty state
-  const offersLoading = document.getElementById("offersLoading");
-  const offersEmpty = document.getElementById("offersEmpty");
-  if (offersLoading) offersLoading.style.display = "none";
-  if (offersEmpty) offersEmpty.style.display = "";
-
-  // Hide page loader, show main layout
-  const pageLoader = document.getElementById("pageLoader");
-  const mainLayout = document.getElementById("mainLayout");
-  if (pageLoader) pageLoader.remove();
-  if (mainLayout) mainLayout.style.display = "";
 
   if (state.profile && !isProfileComplete(state.profile)) {
     initOnboarding();
     showOnboarding();
   }
 
-  initProfileModal();
-  initLogout();
-});
+  // Fetch test assignments
+  try {
+    const assignments = await getMyInvitations();
+    renderPendingTests(assignments);
+    renderActivityFeed(assignments);
+  } catch (err) {
+    console.error("Error loading tests:", err);
+    const loader1 = $("#pendingTestsLoader");
+    const loader2 = $("#activityLoader");
+    if (loader1) loader1.style.display = "none";
+    if (loader2) loader2.style.display = "none";
+    $("#pendingTestsValue").textContent = "—";
+    $("#completedTestsValue").textContent = "—";
+  }
+}

@@ -1,12 +1,13 @@
 // ── Candidate Tests Page ────────────────────────────────────────
 // Shows tests assigned by companies and lets candidates resolve them.
+import { showConfirmModal, showToast } from './app.js';
 
-import { authMe, authLogout } from '../../api/authApi.js';
+import { authMe } from '../../api/authApi.js';
+import { getCandidateProfile } from '../../api/candidateApi.js';
 import {
-    getTestsForCandidate,
+    getMyInvitations,
     getGorillaTest,
     submitGorillaTest,
-    markTestCompleted,
 } from '../../api/testsApi.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -21,24 +22,12 @@ let state = {
     timeLeft: 0,
 };
 
-// ── Auth ──────────────────────────────────────────────────────────
-async function ensureCandidateAccess() {
-    const me = await authMe();
-    if (!me?.authenticated || !me?.user) {
-        window.location.href = '/public/login.html';
-        return null;
-    }
-    if (me.user.role !== 'candidate') {
-        window.location.href = '/public/login.html';
-        return null;
-    }
-    return me.user;
-}
+
 
 // ── Render Tests List ─────────────────────────────────────────────
-function renderTestsList() {
+async function renderTestsList() {
     const container = $('#testsContainer');
-    const assignments = getTestsForCandidate(state.user.id, state.user.email);
+    const assignments = await getMyInvitations();
     state.tests = assignments;
 
     const pending = assignments.filter(a => a.status === 'pending');
@@ -51,8 +40,8 @@ function renderTestsList() {
         container.innerHTML = `
             <div class="empty-state test-empty">
                 <div style="margin-bottom: 12px; opacity: 0.4;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
-                <p>No tienes tests asignados todavía.</p>
-                <p style="font-size: 13px; opacity: 0.7;">Las empresas te enviarán tests cuando les interese tu perfil.</p>
+                <p>You don't have any assigned tests yet.</p>
+                <p style="font-size: 13px; opacity: 0.7;">Companies will send you tests when they're interested in your profile.</p>
             </div>`;
         return;
     }
@@ -66,7 +55,7 @@ function renderTestsList() {
     container.querySelectorAll('.test-card__action').forEach(btn => {
         btn.addEventListener('click', () => {
             const offerId = btn.dataset.offerId;
-            const assignment = assignments.find(a => a.offerId === offerId);
+            const assignment = assignments.find(a => (a.offerId || a.offer_id) === offerId);
             if (assignment) startTest(assignment);
         });
     });
@@ -74,9 +63,13 @@ function renderTestsList() {
 
 function renderTestCard(assignment) {
     const isCompleted = assignment.status === 'completed';
-    const sentDate = new Date(assignment.sentAt).toLocaleDateString('es-CO', {
-        day: 'numeric', month: 'short', year: 'numeric',
-    });
+    const dateVal = assignment.assigned_at || assignment.created_at || assignment.sentAt;
+    const sentDate = dateVal
+        ? new Date(dateVal).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Recently';
+    const offerId = assignment.offerId || assignment.offer_id;
+    const title = assignment.offerTitle || assignment.offer_title || 'Gorilla Test';
+    const company = assignment.companyName || assignment.company_name || 'Company';
 
     const iconDone = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#10b981" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
     const iconPending = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="var(--bg-800)" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`;
@@ -86,18 +79,18 @@ function renderTestCard(assignment) {
         <div class="test-card__left">
             <div class="test-card__icon">${isCompleted ? iconDone : iconPending}</div>
             <div class="test-card__info">
-                <h4 class="test-card__title">${esc(assignment.offerTitle || 'Gorilla Test')}</h4>
-                <p class="test-card__company">${esc(assignment.companyName || 'Empresa')}</p>
-                <span class="test-card__date">Enviado el ${sentDate}</span>
+                <h4 class="test-card__title">${esc(title)}</h4>
+                <p class="test-card__company">${esc(company)}</p>
+                <span class="test-card__date">Sent on ${sentDate}</span>
             </div>
         </div>
         <div class="test-card__right">
             <span class="test-card__status ${isCompleted ? 'test-card__status--done' : 'test-card__status--pending'}">
-                ${isCompleted ? 'Completado' : 'Pendiente'}
+                ${isCompleted ? 'Completed' : 'Pending'}
             </span>
             ${!isCompleted ? `
-            <button class="btn btn--primary test-card__action" data-offer-id="${assignment.offerId}">
-                Resolver →
+            <button class="btn btn--primary test-card__action" data-offer-id="${offerId}">
+                Solve
             </button>` : ''}
         </div>
     </div>`;
@@ -114,11 +107,11 @@ async function startTest(assignment) {
         $('#testQuestionsContainer').innerHTML = `
             <div class="page-loader-overlay" style="position: relative; min-height: 200px; background: transparent;">
                 <div class="page-loader-overlay__spinner"></div>
-                <span class="page-loader-overlay__text">Cargando test…</span>
+                <span class="page-loader-overlay__text">Loading test…</span>
             </div>`;
 
         // Fetch the test
-        const test = await getGorillaTest(assignment.offerId);
+        const test = await getGorillaTest(assignment.offerId || assignment.offer_id);
         state.currentTest = test;
         state.currentAssignment = assignment;
         state.answers = {};
@@ -144,7 +137,7 @@ async function startTest(assignment) {
         console.error('Error loading test:', err);
         $('#testQuestionsContainer').innerHTML = `
             <div class="alert is-error" style="text-align: center;">
-                Error cargando el test: ${esc(err.message)}
+                We couldn't load the test right now. Please go back and try again.
             </div>`;
     }
 }
@@ -161,18 +154,71 @@ function updateTimerDisplay() {
 
 function renderQuestions(questions) {
     const container = $('#testQuestionsContainer');
+    state.currentQuestionIndex = 0;
 
-    container.innerHTML = questions.map((q, idx) => `
-        <div class="test-question" data-question="${idx + 1}">
+    // Build all question HTML but only show one at a time
+    container.innerHTML = `
+        <!-- Question indicator dots -->
+        <div class="test-indicator" id="questionIndicator">
+            ${questions.map((_, idx) => `
+                <button class="test-indicator__dot ${idx === 0 ? 'test-indicator__dot--current' : ''}"
+                    data-goto="${idx}" title="Question ${idx + 1}">
+                    ${idx + 1}
+                </button>
+            `).join('')}
+        </div>
+
+        <!-- Single question container -->
+        <div id="activeQuestion"></div>
+
+        <!-- Navigation -->
+        <div class="test-nav" id="testNav">
+            <button class="btn btn--ghost" id="prevQuestionBtn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                Previous
+            </button>
+            <span class="test-nav__counter" id="questionCounter">1 / ${questions.length}</span>
+            <button class="btn btn--primary" id="nextQuestionBtn">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+    `;
+
+    // Navigation handlers
+    $('#prevQuestionBtn').addEventListener('click', () => navigateQuestion(-1, questions));
+    $('#nextQuestionBtn').addEventListener('click', () => navigateQuestion(1, questions));
+
+    // Dot click navigation
+    container.querySelectorAll('.test-indicator__dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            state.currentQuestionIndex = parseInt(dot.dataset.goto);
+            showQuestion(questions);
+        });
+    });
+
+    // Show first question
+    showQuestion(questions);
+}
+
+function showQuestion(questions) {
+    const idx = state.currentQuestionIndex;
+    const q = questions[idx];
+    const total = questions.length;
+    const container = $('#activeQuestion');
+    const previousAnswer = state.answers[String(idx + 1)];
+
+    container.innerHTML = `
+        <div class="test-question test-question--active" style="animation: fadeSlideIn 0.3s ease">
             <div class="test-question__header">
-                <span class="test-question__number">Pregunta ${idx + 1} de ${questions.length}</span>
+                <span class="test-question__number">Question ${idx + 1} of ${total}</span>
                 ${q.difficulty ? `<span class="test-question__difficulty test-question__difficulty--${q.difficulty}">${esc(q.difficulty)}</span>` : ''}
             </div>
             <h4 class="test-question__text">${esc(q.question)}</h4>
             <div class="test-question__options">
                 ${Object.entries(q.options || {}).map(([key, value]) => `
-                    <label class="test-option" data-question="${idx + 1}" data-option="${key}">
-                        <input type="radio" name="q${idx + 1}" value="${key}" />
+                    <label class="test-option ${previousAnswer === key ? 'test-option--selected' : ''}" data-option="${key}">
+                        <input type="radio" name="q${idx + 1}" value="${key}" ${previousAnswer === key ? 'checked' : ''} />
                         <span class="test-option__check"></span>
                         <span class="test-option__label">
                             <strong>${key}.</strong> ${esc(value)}
@@ -181,22 +227,90 @@ function renderQuestions(questions) {
                 `).join('')}
             </div>
         </div>
-    `).join('');
+    `;
 
-    // Bind option clicks
+    // Bind option selection
     container.querySelectorAll('input[type="radio"]').forEach(input => {
         input.addEventListener('change', (e) => {
-            const questionNum = e.target.name.replace('q', '');
-            state.answers[questionNum] = e.target.value;
+            state.answers[String(idx + 1)] = e.target.value;
 
-            // Update visual state
-            const parentQuestion = e.target.closest('.test-question');
-            parentQuestion.querySelectorAll('.test-option').forEach(opt =>
+            // Update visual
+            container.querySelectorAll('.test-option').forEach(opt =>
                 opt.classList.remove('test-option--selected'));
             e.target.closest('.test-option').classList.add('test-option--selected');
 
-            updateProgress(questions.length);
+            updateProgress(total);
+            updateIndicator(questions);
+
+            // Auto-advance after a short delay
+            if (idx < total - 1) {
+                setTimeout(() => {
+                    state.currentQuestionIndex++;
+                    showQuestion(questions);
+                }, 400);
+            } else {
+                // Last question answered — enable submit
+                updateNavButtons(questions);
+            }
         });
+    });
+
+    updateNavButtons(questions);
+    updateIndicator(questions);
+    updateProgress(total);
+
+    // Counter
+    $('#questionCounter').textContent = `${idx + 1} / ${total}`;
+}
+
+function navigateQuestion(direction, questions) {
+    const newIdx = state.currentQuestionIndex + direction;
+    if (newIdx < 0 || newIdx >= questions.length) return;
+    state.currentQuestionIndex = newIdx;
+    showQuestion(questions);
+}
+
+function updateNavButtons(questions) {
+    const idx = state.currentQuestionIndex;
+    const total = questions.length;
+    const answered = Object.keys(state.answers).length;
+
+    $('#prevQuestionBtn').disabled = idx === 0;
+
+    const nextBtn = $('#nextQuestionBtn');
+    if (idx === total - 1) {
+        // Last question — show submit if all answered
+        if (answered >= total) {
+            nextBtn.innerHTML = `Submit <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+            nextBtn.className = 'btn btn--primary';
+            nextBtn.disabled = false;
+            nextBtn.onclick = () => {
+                const modal = $('#submitConfirmModal');
+                if (modal) modal.showModal();
+            };
+        } else {
+            nextBtn.innerHTML = `${answered}/${total} answered`;
+            nextBtn.className = 'btn btn--ghost';
+            nextBtn.disabled = true;
+        }
+    } else {
+        nextBtn.innerHTML = `Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`;
+        nextBtn.className = 'btn btn--primary';
+        nextBtn.disabled = false;
+        nextBtn.onclick = () => navigateQuestion(1, questions);
+    }
+}
+
+function updateIndicator(questions) {
+    const dots = document.querySelectorAll('.test-indicator__dot');
+    dots.forEach((dot, i) => {
+        dot.classList.remove('test-indicator__dot--current', 'test-indicator__dot--answered');
+        if (i === state.currentQuestionIndex) {
+            dot.classList.add('test-indicator__dot--current');
+        }
+        if (state.answers[String(i + 1)]) {
+            dot.classList.add('test-indicator__dot--answered');
+        }
     });
 }
 
@@ -206,10 +320,12 @@ function updateProgress(total) {
     $('#testProgressBar').style.width = `${pct}%`;
 
     const submitBtn = $('#submitTestBtn');
-    submitBtn.disabled = answered < total;
-    submitBtn.textContent = answered < total
-        ? `Enviar respuestas (${answered}/${total})`
-        : 'Enviar respuestas ✓';
+    if (submitBtn) {
+        submitBtn.disabled = answered < total;
+        submitBtn.textContent = answered < total
+            ? `Submit answers (${answered}/${total})`
+            : 'Submit answers';
+    }
 }
 
 // ── Submit Test ───────────────────────────────────────────────────
@@ -223,42 +339,37 @@ async function doSubmitTest() {
         state.timerInterval = null;
     }
 
-    const submitBtn = $('#submitTestBtn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando…';
+    // Disable navigation during submit
+    const nextBtn = $('#nextQuestionBtn');
+    const prevBtn = $('#prevQuestionBtn');
+    if (nextBtn) { nextBtn.disabled = true; nextBtn.textContent = 'Submitting…'; }
+    if (prevBtn) prevBtn.disabled = true;
 
     try {
+        const candidateId = state.candidateId || state.user.id;
         const result = await submitGorillaTest(
             state.currentTest.id,
-            state.user.id,
+            candidateId,
             state.answers
         );
 
-        // Mark as completed in localStorage
-        markTestCompleted(
-            state.currentAssignment.offerId,
-            state.currentAssignment.candidateId
-        );
-
-        // Show results
+        // Show success and redirect to dashboard
+        showToast('Test submitted successfully!', 'success');
         showResults(result);
     } catch (err) {
         console.error('Submit error:', err);
 
         // If already submitted, still show the view
         if (err.message?.includes('already submitted')) {
-            markTestCompleted(
-                state.currentAssignment.offerId,
-                state.currentAssignment.candidateId
-            );
+            showToast('This test was already submitted.', 'success');
             showResults({
                 evaluation: { percentage_score: 0, correct_answers: '?', total_questions: '?', attention_level: '?' },
-                message: 'Ya habías enviado este test anteriormente.',
+                message: 'It looks like you have already submitted this test.',
             });
         } else {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Enviar respuestas';
-            alert(`Error enviando: ${err.message}`);
+            if (nextBtn) { nextBtn.disabled = false; nextBtn.textContent = 'Retry Submit'; }
+            if (prevBtn) prevBtn.disabled = false;
+            showToast('Something went wrong while submitting your answers. Please try again.', 'error');
         }
     }
 }
@@ -281,22 +392,31 @@ function showResults(result) {
 
     if (score >= 80) {
         $('#resultIcon').innerHTML = trophySvg;
-        $('#resultSubtitle').textContent = '¡Excelente resultado! Has demostrado un gran dominio.';
+        $('#resultSubtitle').textContent = 'Excellent result! You have demonstrated great mastery.';
     } else if (score >= 50) {
         $('#resultIcon').innerHTML = thumbsUpSvg;
-        $('#resultSubtitle').textContent = 'Buen trabajo. Sigue mejorando tus habilidades.';
+        $('#resultSubtitle').textContent = 'Good job. Keep improving your skills.';
     } else {
         $('#resultIcon').innerHTML = studySvg;
-        $('#resultSubtitle').textContent = 'Sigue estudiando. Puedes mejorar.';
+        $('#resultSubtitle').textContent = 'Keep studying. You can improve.';
     }
 
-    if (result.message && result.message.includes('Ya habías')) {
+    if (result.message && result.message.includes('already')) {
         $('#resultSubtitle').textContent = result.message;
+    }
+
+    // Change "Back to Tests" button to redirect to dashboard
+    const backBtn = $('#backToTestsBtn');
+    if (backBtn) {
+        backBtn.textContent = 'Back to Dashboard';
+        backBtn.onclick = () => {
+            window.location.hash = '#/dashboard';
+        };
     }
 }
 
 // ── Navigation ────────────────────────────────────────────────────
-function showTestsList() {
+async function showTestsList() {
     if (state.timerInterval) {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
@@ -304,7 +424,7 @@ function showTestsList() {
     $('#testsListView').style.display = '';
     $('#testTakingView').style.display = 'none';
     $('#testResultsView').style.display = 'none';
-    renderTestsList();
+    await renderTestsList();
 }
 
 // ── Utility ───────────────────────────────────────────────────────
@@ -315,42 +435,67 @@ function esc(str) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-    const user = await ensureCandidateAccess();
-    if (!user) return;
+export async function initTests() {
+    let user = window.__candidateUser;
+    if (!user) {
+        try {
+            const me = await authMe();
+            if (me?.authenticated && me?.user?.role === 'candidate') {
+                user = me.user;
+                window.__candidateUser = user;
+            } else {
+                window.location.href = '../login.html';
+                return;
+            }
+        } catch {
+            window.location.href = '../login.html';
+            return;
+        }
+    }
 
     state.user = user;
-    $('#welcomeText').textContent = `Hola, ${user.email?.split('@')[0] || 'Candidato'}`;
 
-    // Hide loader, show layout
-    const pageLoader = document.getElementById('pageLoader');
-    const mainLayout = document.getElementById('mainLayout');
-    if (pageLoader) pageLoader.remove();
-    if (mainLayout) mainLayout.style.display = '';
+    // Fetch candidate profile to get the correct candidate_id for submissions
+    try {
+        const profile = await getCandidateProfile();
+        state.candidateId = profile.id || profile.candidate_id;
+    } catch (err) {
+        console.warn('Could not fetch candidate profile for ID:', err);
+    }
 
-    renderTestsList();
+    await renderTestsList();
 
     // Back button
-    $('#backToListBtn')?.addEventListener('click', () => {
-        if (confirm('¿Seguro que quieres salir del test? Perderás tu progreso.')) {
-            showTestsList();
-        }
+    $('#backToListBtn')?.addEventListener('click', async () => {
+        const confirmed = await showConfirmModal(
+            'Leave Test?',
+            'Are you sure you want to leave? You will lose your current progress.'
+        );
+        if (confirmed) showTestsList();
     });
 
-    // Submit button
-    $('#submitTestBtn')?.addEventListener('click', doSubmitTest);
+    // Submit button → open confirmation modal
+    $('#submitTestBtn')?.addEventListener('click', () => {
+        const modal = $('#submitConfirmModal');
+        if (modal) modal.showModal();
+    });
+
+    // Confirm submit inside modal
+    $('#confirmSubmitBtn')?.addEventListener('click', () => {
+        $('#submitConfirmModal')?.close();
+        doSubmitTest();
+    });
+
+    // Cancel submit — go back to reviewing
+    $('#cancelSubmitBtn')?.addEventListener('click', () => {
+        $('#submitConfirmModal')?.close();
+    });
+
+    // Close modal on backdrop click
+    $('#submitConfirmModal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) e.currentTarget.close();
+    });
 
     // Back to tests from results
     $('#backToTestsBtn')?.addEventListener('click', showTestsList);
-
-    // Logout
-    $('#logoutBtn')?.addEventListener('click', async () => {
-        await authLogout();
-        window.location.href = '/public/login.html';
-    });
-
-    // Edit profile redirect
-    $('#editProfileBtn')?.addEventListener('click', () => {
-        window.location.href = './dashboard.html';
-    });
-});
+}

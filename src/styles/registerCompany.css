@@ -71,6 +71,20 @@ body {
   object-fit: contain;
 }
 
+.auth__title {
+  font-size: 28px;
+  margin: 16px 0 8px;
+  letter-spacing: -0.5px;
+  color: var(--bg-800);
+}
+
+.auth__subtitle {
+  color: var(--text-700);
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
  /**Banners */
 .banner { padding: .75rem 1rem; border-radius: 6px; font-size: .9rem; }
 .banner--error   { background: #fee2e2; color: #b91c1c; }
@@ -99,6 +113,27 @@ body {
   box-shadow:
     0 40px 100px rgba(2, 16, 36, 0.18),
     0 15px 30px rgba(2, 16, 36, 0.1);
+}
+
+.card__header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(125,160,202,0.2);
+}
+
+.card__header .auth__title {
+  font-size: 24px;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+  color: var(--bg-800);
+}
+
+.card__header .auth__subtitle {
+  color: var(--text-700);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 /* FORM STRUCTURE */

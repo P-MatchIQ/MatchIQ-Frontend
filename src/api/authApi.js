@@ -28,13 +28,13 @@ export async function registerCandidate({ email, password, confirmPassword }) {
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("Todos los campos son obligatorios.");
+    throw new Error("All fields are required.");
   }
   if (normalizedPassword.length < 6) {
-    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
+    throw new Error("Password must be at least 6 characters.");
   }
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Las contraseñas no coinciden.");
+    throw new Error("Passwords do not match.");
   }
   await apiFetch("/auth/register/candidate", {
     method: "POST",
@@ -53,13 +53,13 @@ export async function registerCompany({ email, password, confirmPassword }) {
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("Todos los campos son obligatorios.");
+    throw new Error("All fields are required.");
   }
   if (normalizedPassword.length < 6) {
-    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
+    throw new Error("Password must be at least 6 characters.");
   }
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Las contraseñas no coinciden.");
+    throw new Error("Passwords do not match.");
   }
   await apiFetch("/auth/register/company", {
     method: "POST",
@@ -84,8 +84,8 @@ export async function authLogin({ email, password, remember }) {
       rememberMe: !!remember,
     }),
   });
-  // El backend establece la cookie httpOnly automáticamente.
-  // Solo guardamos los datos del usuario para la UI.
+  // The backend sets the httpOnly cookie automatically.
+  // We only store user data for the UI.
   saveSession(response.user, !!remember);
   return { user: response.user };
 }
@@ -105,7 +105,7 @@ export async function authMe() {
 }
 export async function authLogout() {
   try {
-    // El backend limpia su cookie httpOnly en este endpoint.
+    // The backend clears its httpOnly cookie at this endpoint.
     await apiFetch("/auth/logout", { method: "POST" });
   } catch { }
   clearSession();

@@ -251,20 +251,46 @@ input:focus{
 
 .register{
   display:flex;
-  justify-content:space-between;
-  align-items:center;
+  gap:16px;
+  align-items:stretch;
 }
 
-.register__col{ text-align:center; }
+.register__col{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:18px 14px;
+  border-radius:14px;
+  background:rgba(193,232,255,0.12);
+  border:1px solid rgba(125,160,202,0.18);
+  transition:background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  text-align:center;
+}
+
+.register__col:hover{
+  background:rgba(193,232,255,0.28);
+  border-color:rgba(125,160,202,0.35);
+  box-shadow:0 4px 16px rgba(15,37,55,0.06);
+}
+
+.register__icon{
+  font-size:24px;
+  line-height:1;
+}
 
 .register__kicker{
   font-size:11px;
   text-transform:uppercase;
+  letter-spacing:0.06em;
   color:rgba(2,16,36,0.5);
+  line-height:1.3;
 }
 
 .register__link{
   font-weight:700;
+  font-size:15px;
   color:var(--bg-800);
   text-decoration:none;
 }
@@ -272,9 +298,7 @@ input:focus{
 .register__link:hover{ text-decoration: underline; }
 
 .register__sep{
-  width: 1px;
-  height: 34px;
-  background: rgba(125,160,202,0.30);
+  display:none; /* separator replaced by gap between cards */
 }
 
 .session{
@@ -305,6 +329,5 @@ input:focus{
 @media (max-width:700px){
   .topbar{ padding: 22px 20px; }
   .card{ padding: 32px 22px; }
-  .register{ flex-direction: column; gap: 14px; }
-  .register__sep{ width: 100%; height:1px; }
+  .register{ flex-direction: column; gap: 12px; }
 }

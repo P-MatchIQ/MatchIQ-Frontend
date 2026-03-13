@@ -3,6 +3,7 @@
 // (editar, cerrar, cancelar con confirmación).
 
 import { getOffers, closeOffer, cancelOffer } from '../../api/offersApi.js';
+import { getFullGorillaTest, getTestInfo } from '../../api/testsApi.js';
 import { showToast, showConfirmModal, showOfferModal } from './app.js';
 
 const MODALITY_LABELS = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'Onsite' };
@@ -94,7 +95,7 @@ function isActiveOffer(offer) {
 function renderOfferCard(offer) {
     const status = STATUS_LABELS[offer.status] || { label: offer.status, cls: '' };
     const salary = offer.salary
-        ? `$${offer.salary.toLocaleString('es-CO')} COP`
+        ? `$${offer.salary.toLocaleString('en-US')} COP`
         : 'Not specified';
 
     return `
@@ -127,9 +128,9 @@ function renderOfferCard(offer) {
 
         ${isActiveOffer(offer) ? `
         <div class="offer-card__actions">
-            <a href="#/matches/${offer.id}" class="btn btn--ghost btn--sm" onclick="event.stopPropagation()">Find Matches</a>
+            <a href="#/matches/${offer.id}" class="btn btn--icon btn--sm" onclick="event.stopPropagation()" title="Find Matches"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></a>
+            <button class="btn btn--ghost btn--sm" data-action="view-test" data-id="${offer.id}">View Test</button>
             <a href="#/offers/edit/${offer.id}" class="btn btn--ghost btn--sm">Edit</a>
-            <button class="btn btn--warning btn--sm" data-action="close" data-id="${offer.id}">Close</button>
             <button class="btn btn--danger btn--sm" data-action="cancel" data-id="${offer.id}">Cancel</button>
         </div>` : ''}
     </article>`;
@@ -157,6 +158,11 @@ async function handleAction(e) {
     const action = btn.dataset.action;
     const id = btn.dataset.id;
 
+    if (action === 'view-test') {
+        await handleViewTest(id);
+        return;
+    }
+
     if (action === 'close') {
         await closeOffer(id);
         showToast('Offer closed.');
@@ -176,6 +182,66 @@ async function handleAction(e) {
         allOffers = await getOffers();
         renderOffers();
     }
+}
+
+/* ── View Test from Offer ──────────────────────────────────────── */
+
+async function handleViewTest(offerId) {
+    try {
+        const testInfo = await getTestInfo(offerId).catch(() => null);
+        if (!testInfo) {
+            showToast('No test has been generated for this offer yet.', 'error');
+            return;
+        }
+
+        showToast('Loading test preview…', 'info');
+        const fullTest = await getFullGorillaTest(offerId);
+        openOfferTestPreview(fullTest);
+    } catch (err) {
+        console.error('Error loading test:', err);
+        showToast('Error loading test: ' + (err.message || 'Unknown error'), 'error');
+    }
+}
+
+function openOfferTestPreview(test) {
+    const modal = document.getElementById('offerTestPreviewModal');
+    if (!modal) return;
+
+    document.getElementById('offer-preview-test-title').textContent = test.test_title || 'Gorilla Test';
+    document.getElementById('offer-preview-test-meta').textContent =
+        `${test.questions?.length || 0} questions · ${test.time_limit_minutes || 30} min time limit`;
+
+    const container = document.getElementById('offer-preview-questions-container');
+    container.innerHTML = (test.questions || []).map((q, idx) => `
+        <div class="preview-question">
+            <div class="preview-question__header">
+                <span class="preview-question__number">Q${idx + 1}</span>
+                ${q.difficulty ? `<span class="preview-question__difficulty preview-question__difficulty--${q.difficulty}">${esc(q.difficulty)}</span>` : ''}
+            </div>
+            <p class="preview-question__text">${esc(q.question)}</p>
+            <div class="preview-question__options">
+                ${Object.entries(q.options || {}).map(([key, value]) => {
+                    const isCorrect = key === q.correct_answer;
+                    return `
+                        <div class="preview-option ${isCorrect ? 'preview-option--correct' : ''}">
+                            <span class="preview-option__key">${key}</span>
+                            <span class="preview-option__text">${esc(value)}</span>
+                            ${isCorrect ? '<span class="preview-option__badge">Correct</span>' : ''}
+                        </div>`;
+                }).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    // Setup close handlers
+    const closeBtn = document.getElementById('closeOfferTestPreview');
+    const closeModalBtn = document.getElementById('offerPreviewCloseBtn');
+    const closeHandler = () => modal.close();
+    closeBtn?.addEventListener('click', closeHandler, { once: true });
+    closeModalBtn?.addEventListener('click', closeHandler, { once: true });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); }, { once: true });
+
+    modal.showModal();
 }
 
 /* ── Helpers ───────────────────────────────────────────────────── */

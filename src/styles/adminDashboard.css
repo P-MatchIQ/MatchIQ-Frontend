@@ -54,8 +54,7 @@ body {
 }
 
 .sidebar__logo {
-  width: 40px; height: 40px;
-  background: var(--emerald);
+  width: 10rem ;
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; color: var(--white); font-size: 14px;
@@ -133,15 +132,18 @@ body {
   text-transform: uppercase;
 }
 
-.sidebar__logout {
-  margin-left: auto;
+.sidebar__logout,
+.sidebar__link--logout {
+  margin-top: auto;
   background: none; border: none;
   color: var(--gray-400); cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
   transition: var(--transition);
 }
 
-.sidebar__logout:hover { color: var(--red); }
+.sidebar__link--logout:hover { color: var(--red); background: rgba(198,40,40,0.1); }
 
 /* ── MAIN ─────────────────────────────────────────────────────────────────── */
 .main {
@@ -400,7 +402,7 @@ body {
   background: var(--white);
   border-radius: var(--radius);
   padding: 28px;
-  width: 520px;
+  width: 600px;
   max-width: 95vw;
   max-height: 85vh;
   overflow-y: auto;
@@ -409,6 +411,23 @@ body {
 }
 
 .modal__box--sm { width: 380px; }
+
+.btn:disabled, .btn--sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stat-card__icon svg {
+  color: var(--emerald);
+}
+
+.sidebar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
 
 .modal__header {
   display: flex; align-items: center;

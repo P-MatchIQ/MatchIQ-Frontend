@@ -3,9 +3,10 @@
 
 import { getMatchesForOffer } from '../../api/matchingApi.js';
 import { getOfferById } from '../../api/offersApi.js';
-import { getTestInfo, getFullGorillaTest, assignTestToCandidate, getTestAssignments } from '../../api/testsApi.js';
+import { getTestInfo, getTestSubmissions, inviteCandidate } from '../../api/testsApi.js';
 import { getCompanyProfile } from '../../api/companyApi.js';
-import { showToast } from './app.js';
+import { showToast, showConfirmModal } from './app.js';
+import { notifyTestSent, notifyPassedFilter } from '../../api/n8nApi.js';
 
 /* ── SVG Icons ─────────────────────────────────────────────────── */
 const ICON = {
@@ -14,6 +15,9 @@ const ICON = {
     seniority: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/></svg>`,
     person: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24" style="opacity:0.4"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>`,
     test: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>`,
+    clock: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
+    check: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+    arrow: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
 };
 
 const ICON_LG = {
@@ -42,6 +46,7 @@ let aiMapGlobal = new Map();
 let currentOfferId = null;
 let currentOfferTitle = '';
 let cachedTestInfo = null;
+let submissionsMap = new Map(); // candidateId → { status, score, feedback, ... }
 let companyName = '';
 
 /**
@@ -56,6 +61,7 @@ export async function initMatches(params = {}) {
 
     candidatesMap.clear();
     aiMapGlobal.clear();
+    submissionsMap.clear();
     cachedTestInfo = null;
     currentOfferId = params.id || null;
 
@@ -83,6 +89,28 @@ export async function initMatches(params = {}) {
         cachedTestInfo = testInfo;
         currentOfferTitle = offer?.title || '';
         companyName = companyProfile?.company_name || '';
+
+        // Fetch existing submissions to know status per candidate
+        if (testInfo?.id) {
+            try {
+                const submissions = await getTestSubmissions(testInfo.id);
+                if (Array.isArray(submissions)) {
+                    submissions.forEach(s => {
+                        if (s.candidate_id) {
+                            submissionsMap.set(String(s.candidate_id), {
+                                status: s.status || 'pending',
+                                score: s.score,
+                                feedback: s.feedback,
+                                submitted_at: s.submitted_at,
+                                ai_evaluated_at: s.ai_evaluated_at,
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not fetch existing submissions:', e);
+            }
+        }
 
         // Update header
         if (offer) {
@@ -135,6 +163,24 @@ export async function initMatches(params = {}) {
                 return;
             }
 
+            // View Results button click
+            const viewResultsBtn = e.target.closest('.match-card__view-results');
+            if (viewResultsBtn) {
+                e.stopPropagation();
+                const candidateId = viewResultsBtn.dataset.candidateId;
+                if (candidateId) openCandidateModal(candidateId);
+                return;
+            }
+
+            // Pass to Next Filter button click
+            const passFilterBtn = e.target.closest('.match-card__pass-filter');
+            if (passFilterBtn) {
+                e.stopPropagation();
+                const candidateId = passFilterBtn.dataset.candidateId;
+                if (candidateId) handlePassToNextFilter(candidateId);
+                return;
+            }
+
             // AI toggle
             const toggle = e.target.closest('.match-card__ai-toggle');
             if (toggle) {
@@ -157,7 +203,6 @@ export async function initMatches(params = {}) {
 
         // Modal close handlers
         setupModalClose();
-        setupPreviewModal();
 
     } catch (err) {
         console.error('Matching error:', err);
@@ -170,8 +215,6 @@ export async function initMatches(params = {}) {
 
 /* ── Send Test Logic ────────────────────────────────────────────── */
 
-let pendingSendCandidateId = null;
-
 async function handleSendTest(candidateId) {
     const candidate = candidatesMap.get(candidateId);
     if (!candidate) return;
@@ -183,85 +226,34 @@ async function handleSendTest(candidateId) {
         return;
     }
 
-    // Check if already sent
-    const assignments = getTestAssignments();
-    const alreadySent = assignments.some(a => a.offerId === currentOfferId && a.candidateId === candidateId);
-    if (alreadySent) {
-        showToast(`Test already sent to ${name}`, 'error');
-        return;
-    }
+    // Simple confirmation before sending
+    const confirmed = await showConfirmModal(
+        'Send Test',
+        `Are you sure you want to send the Gorilla Test to ${name}?`
+    );
 
-    // Fetch full test for preview
+    if (!confirmed) return;
+
     try {
-        showToast('Loading test preview…', 'info');
-        const fullTest = await getFullGorillaTest(currentOfferId);
-        pendingSendCandidateId = candidateId;
-        openTestPreview(fullTest, name);
-    } catch (err) {
-        console.error('Error loading test preview:', err);
-        showToast('Error loading test: ' + (err.message || 'Unknown error'), 'error');
-    }
-}
-
-function openTestPreview(test, candidateName) {
-    const modal = document.getElementById('testPreviewModal');
-    if (!modal) return;
-
-    document.getElementById('preview-test-title').textContent = test.test_title || 'Gorilla Test';
-    document.getElementById('preview-test-meta').textContent =
-        `${test.questions?.length || 0} questions · ${test.time_limit_minutes || 30} min · Sending to ${candidateName}`;
-
-    const container = document.getElementById('preview-questions-container');
-    container.innerHTML = (test.questions || []).map((q, idx) => `
-        <div class="preview-question">
-            <div class="preview-question__header">
-                <span class="preview-question__number">Q${idx + 1}</span>
-                ${q.difficulty ? `<span class="preview-question__difficulty preview-question__difficulty--${q.difficulty}">${esc(q.difficulty)}</span>` : ''}
-            </div>
-            <p class="preview-question__text">${esc(q.question)}</p>
-            <div class="preview-question__options">
-                ${Object.entries(q.options || {}).map(([key, value]) => {
-                    const isCorrect = key === q.correct_answer;
-                    return `
-                        <div class="preview-option ${isCorrect ? 'preview-option--correct' : ''}">
-                            <span class="preview-option__key">${key}</span>
-                            <span class="preview-option__text">${esc(value)}</span>
-                            ${isCorrect ? '<span class="preview-option__badge">Correct</span>' : ''}
-                        </div>`;
-                }).join('')}
-            </div>
-        </div>
-    `).join('');
-
-    modal.showModal();
-}
-
-function confirmSendTest() {
-    if (!pendingSendCandidateId) return;
-
-    const candidateId = pendingSendCandidateId;
-    const candidate = candidatesMap.get(candidateId);
-    const name = getCandidateName(candidate);
-
-    const sent = assignTestToCandidate({
-        offerId: currentOfferId,
-        offerTitle: currentOfferTitle,
-        candidateId: candidateId,
-        candidateName: name,
-        candidateEmail: candidate?.email || '',
-        testId: cachedTestInfo.id,
-        companyName: companyName,
-    });
-
-    if (sent) {
+        await inviteCandidate(currentOfferId, candidateId);
+        submissionsMap.set(String(candidateId), { status: 'pending', score: null, feedback: null });
         showToast(`Test sent to ${name}`, 'success');
 
-        // Update the button visually
-        const btn = document.querySelector(`.match-card__send-test[data-candidate-id="${candidateId}"]`);
-        if (btn) {
-            btn.classList.add('match-card__send-test--sent');
-            btn.innerHTML = `${ICON.test} Test Sent`;
-            btn.disabled = true;
+        // Call n8n webhook for email notification
+        notifyTestSent({
+            candidateEmail: candidate.email || '',
+            candidateName: name,
+            offerTitle: currentOfferTitle,
+            companyName,
+        });
+
+        // Update the card footer visually
+        const footer = document.querySelector(`.match-card[data-candidate-id="${candidateId}"] .match-card__footer`);
+        if (footer) {
+            const testArea = footer.querySelector('.match-card__send-test');
+            if (testArea) {
+                testArea.outerHTML = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;
+            }
         }
 
         // Update modal button if open
@@ -269,26 +261,57 @@ function confirmSendTest() {
         if (modalBtn && modalBtn.dataset.candidateId === candidateId) {
             modalBtn.classList.add('btn--ghost');
             modalBtn.classList.remove('btn--primary');
-            modalBtn.textContent = '✓ Test Sent';
+            modalBtn.innerHTML = `${ICON.clock} Test Pending`;
             modalBtn.disabled = true;
         }
+    } catch (err) {
+        console.error('Error inviting candidate:', err);
+        showToast(`Error: ${err.message || 'Could not send the test'}`, 'error');
     }
-
-    // Close preview modal
-    document.getElementById('testPreviewModal')?.close();
-    pendingSendCandidateId = null;
 }
 
-function setupPreviewModal() {
-    const modal = document.getElementById('testPreviewModal');
-    const closeBtn = document.getElementById('closeTestPreview');
-    const cancelBtn = document.getElementById('previewCancelBtn');
-    const confirmBtn = document.getElementById('previewConfirmBtn');
+/* ── Pass to Next Filter ───────────────────────────────────────── */
 
-    closeBtn?.addEventListener('click', () => { modal.close(); pendingSendCandidateId = null; });
-    cancelBtn?.addEventListener('click', () => { modal.close(); pendingSendCandidateId = null; });
-    confirmBtn?.addEventListener('click', confirmSendTest);
-    modal?.addEventListener('click', (e) => { if (e.target === modal) { modal.close(); pendingSendCandidateId = null; } });
+async function handlePassToNextFilter(candidateId) {
+    const candidate = candidatesMap.get(candidateId);
+    if (!candidate) return;
+
+    const name = getCandidateName(candidate);
+    const submission = submissionsMap.get(String(candidateId));
+    const score = submission?.score != null ? Math.round(submission.score) : '—';
+
+    const confirmed = await showConfirmModal(
+        'Pass to Next Filter',
+        `Pass ${name} (Score: ${score}%) to the next stage? An email will be sent to notify them.`
+    );
+
+    if (!confirmed) return;
+
+    // Call n8n webhook for congratulations email
+    await notifyPassedFilter({
+        candidateEmail: candidate.email || '',
+        candidateName: name,
+        offerTitle: currentOfferTitle,
+        companyName,
+        score,
+    });
+
+    showToast(`${name} has been passed to the next filter. Notification sent!`, 'success');
+
+    // Update the button visually
+    const btn = document.querySelector(`.match-card__pass-filter[data-candidate-id="${candidateId}"]`);
+    if (btn) {
+        btn.outerHTML = `<span class="match-card__test-status match-card__test-status--passed">${ICON.check} Passed</span>`;
+    }
+
+    // Update modal if open
+    const modalPassBtn = document.getElementById('modal-pass-filter-btn');
+    if (modalPassBtn && modalPassBtn.dataset.candidateId === candidateId) {
+        modalPassBtn.classList.remove('btn--primary');
+        modalPassBtn.classList.add('btn--ghost');
+        modalPassBtn.innerHTML = `${ICON.check} Passed to Next Filter`;
+        modalPassBtn.disabled = true;
+    }
 }
 
 /* ── Modal ──────────────────────────────────────────────────────── */
@@ -306,9 +329,7 @@ function openCandidateModal(candidateId) {
         ? (typeof candidate.matched_skills === 'string' ? candidate.matched_skills.split(',') : candidate.matched_skills)
         : [];
 
-    // Check if test already sent
-    const assignments = getTestAssignments();
-    const alreadySent = assignments.some(a => a.offerId === currentOfferId && a.candidateId === candidateId);
+
 
     // Header
     document.getElementById('modal-candidate-name').textContent = name;
@@ -388,27 +409,70 @@ function openCandidateModal(candidateId) {
         document.getElementById('modal-ai-section').innerHTML = '';
     }
 
-    // Send Test button in modal
+    // Test section in modal — shows status + results
     const testSection = document.getElementById('modal-test-section');
     if (testSection && cachedTestInfo) {
-        testSection.innerHTML = `
-            <div class="candidate-modal__section candidate-modal__test-action">
-                <h4><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Gorilla Test</h4>
-                <p class="muted" style="margin-bottom: 12px;">Send a technical assessment to evaluate this candidate's skills.</p>
-                <button class="btn ${alreadySent ? 'btn--ghost' : 'btn--primary'} btn--full"
-                        id="modal-send-test-btn"
-                        data-candidate-id="${candidateId}"
-                        ${alreadySent ? 'disabled' : ''}>
-                    ${alreadySent ? '✓ Test Sent' : 'Send Gorilla Test'}
-                </button>
-            </div>`;
+        const sub = submissionsMap.get(String(candidateId));
 
-        const modalSendBtn = document.getElementById('modal-send-test-btn');
-        if (modalSendBtn && !alreadySent) {
-            modalSendBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleSendTest(candidateId);
-            });
+        if (sub && sub.status === 'completed') {
+            // Completed — show results + pass to next filter
+            const score = sub.score != null ? Math.round(sub.score) : '—';
+            testSection.innerHTML = `
+                <div class="candidate-modal__section candidate-modal__test-action">
+                    <h4>${ICON.test} Test Results</h4>
+                    <div class="modal-results-card">
+                        <div class="modal-results-card__stat">
+                            <span class="modal-results-card__label">Score</span>
+                            <strong class="modal-results-card__value">${score}%</strong>
+                        </div>
+                        ${sub.feedback ? `
+                        <div class="modal-results-card__feedback">
+                            <span class="modal-results-card__label">Feedback</span>
+                            <p>${esc(sub.feedback)}</p>
+                        </div>` : ''}
+                    </div>
+                    <button class="btn btn--primary btn--full" id="modal-pass-filter-btn" data-candidate-id="${candidateId}" style="margin-top: 12px;">
+                        Pass to Next Filter ${ICON.arrow}
+                    </button>
+                </div>`;
+
+            const passBtn = document.getElementById('modal-pass-filter-btn');
+            if (passBtn) {
+                passBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePassToNextFilter(candidateId);
+                });
+            }
+        } else if (sub) {
+            // Pending — test sent, waiting for candidate
+            testSection.innerHTML = `
+                <div class="candidate-modal__section candidate-modal__test-action">
+                    <h4>${ICON.test} Gorilla Test</h4>
+                    <div class="modal-results-card modal-results-card--pending">
+                        <span>${ICON.clock} Test has been sent. Waiting for the candidate to complete it.</span>
+                    </div>
+                    <button class="btn btn--ghost btn--full" id="modal-send-test-btn" data-candidate-id="${candidateId}" disabled>
+                        ${ICON.clock} Test Pending
+                    </button>
+                </div>`;
+        } else {
+            // Not sent yet
+            testSection.innerHTML = `
+                <div class="candidate-modal__section candidate-modal__test-action">
+                    <h4><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Gorilla Test</h4>
+                    <p class="muted" style="margin-bottom: 12px;">Send a technical assessment to evaluate this candidate's skills.</p>
+                    <button class="btn btn--primary btn--full" id="modal-send-test-btn" data-candidate-id="${candidateId}">
+                        Send Gorilla Test
+                    </button>
+                </div>`;
+
+            const modalSendBtn = document.getElementById('modal-send-test-btn');
+            if (modalSendBtn) {
+                modalSendBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleSendTest(candidateId);
+                });
+            }
         }
     } else if (testSection) {
         testSection.innerHTML = '';
@@ -442,9 +506,26 @@ function renderCandidateCard(candidate, index, aiMap) {
         ? (typeof candidate.matched_skills === 'string' ? candidate.matched_skills.split(',') : candidate.matched_skills)
         : [];
 
-    // Check if test already sent
-    const assignments = getTestAssignments();
-    const alreadySent = assignments.some(a => a.offerId === currentOfferId && a.candidateId === String(candidate.candidate_id));
+    const sub = submissionsMap.get(String(candidate.candidate_id));
+
+    // Build footer test area based on status
+    let testFooterHtml = '';
+    if (cachedTestInfo) {
+        if (sub && sub.status === 'completed') {
+            const score = sub.score != null ? Math.round(sub.score) : '—';
+            testFooterHtml = `
+                <span class="match-card__test-status match-card__test-status--completed">${ICON.check} ${score}%</span>
+                <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
+                <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>`;
+        } else if (sub) {
+            testFooterHtml = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;
+        } else {
+            testFooterHtml = `
+                <button class="match-card__send-test" data-candidate-id="${candidate.candidate_id}">
+                    ${ICON.test} Send Test
+                </button>`;
+        }
+    }
 
     return `
     <article class="match-card${isTop ? ' match-card--ai' : ''}" data-candidate-id="${candidate.candidate_id}" role="button" tabindex="0">
@@ -479,13 +560,8 @@ function renderCandidateCard(candidate, index, aiMap) {
             ${isTop ? renderAiBadge(ai) : ''}
 
             <div class="match-card__footer">
-                <span class="match-card__view-profile">View profile →</span>
-                ${cachedTestInfo ? `
-                <button class="match-card__send-test${alreadySent ? ' match-card__send-test--sent' : ''}"
-                        data-candidate-id="${candidate.candidate_id}"
-                        ${alreadySent ? 'disabled' : ''}>
-                    ${ICON.test} ${alreadySent ? 'Test Sent' : 'Send Test'}
-                </button>` : ''}
+                <span class="match-card__view-profile">View profile ${ICON.arrow}</span>
+                ${testFooterHtml}
             </div>
         </div>
     </article>`;
