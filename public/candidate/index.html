@@ -76,6 +76,100 @@
             <!-- Router injects views here -->
         </main>
 
+        <!-- ── ONBOARDING OVERLAY ── -->
+        <div class="onboarding-overlay onboarding--hidden" id="onboardingOverlay">
+            <div class="onboarding-card">
+                <div class="onboarding-header">
+                    <img src="../../src/assets/iconoMatchIQ-Imag.png" alt="MatchIQ" class="onboarding-logo" />
+                    <h2>Welcome to MatchIQ!</h2>
+                    <p>Complete your profile to start receiving offers matching your skills.</p>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="ob-progress">
+                    <div class="ob-progress__bar" id="ob-progressBar" style="width: 33%"></div>
+                </div>
+
+                <div class="alert" id="onboardingAlert" hidden role="alert"></div>
+
+                <!-- Step 1: Personal info -->
+                <div id="ob-step-1" class="ob-step">
+                    <div class="ob-step__header">
+                        <span class="ob-step__number">Step 1 of 3 — Personal Information</span>
+                        <h3>Tell us about yourself</h3>
+                    </div>
+                    <div class="ob-form-grid">
+                        <div class="field">
+                            <label for="ob_firstName">First Name</label>
+                            <input id="ob_firstName" type="text" placeholder="John" />
+                        </div>
+                        <div class="field">
+                            <label for="ob_lastName">Last Name</label>
+                            <input id="ob_lastName" type="text" placeholder="Doe" />
+                        </div>
+                        <div class="field">
+                            <label for="ob_experience">Years of experience</label>
+                            <input id="ob_experience" type="number" min="0" placeholder="0" />
+                        </div>
+                        <div class="field">
+                            <label for="ob_seniority">Seniority level</label>
+                            <select id="ob_seniority">
+                                <option value="">Select level</option>
+                                <option value="junior">Junior</option>
+                                <option value="mid">Mid</option>
+                                <option value="senior">Senior</option>
+                            </select>
+                        </div>
+                        <div class="field ob-field--full">
+                            <label for="ob_english">English level</label>
+                            <select id="ob_english">
+                                <option value="">Select level</option>
+                                <option value="A1">A1 — Beginner</option>
+                                <option value="A2">A2 — Elementary</option>
+                                <option value="B1">B1 — Intermediate</option>
+                                <option value="B2">B2 — Upper Intermediate</option>
+                                <option value="C1">C1 — Advanced</option>
+                                <option value="C2">C2 — Proficient</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="ob-step__actions">
+                        <button class="btn btn--primary" id="ob_nextStep1" type="button">Continue</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Categories -->
+                <div id="ob-step-2" class="ob-step ob-step--hidden">
+                    <div class="ob-step__header">
+                        <span class="ob-step__number">Step 2 of 3 — Specialization</span>
+                        <h3>What areas do you specialize in?</h3>
+                    </div>
+                    <div class="picker-grid" id="ob-categoriesPicker"></div>
+                    <div class="ob-step__actions">
+                        <button class="btn btn--ghost" id="ob_backStep2" type="button">Back</button>
+                        <button class="btn btn--primary" id="ob_nextStep2" type="button">Continue</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Skills -->
+                <div id="ob-step-3" class="ob-step ob-step--hidden">
+                    <div class="ob-step__header">
+                        <span class="ob-step__number">Step 3 of 3 — Skills</span>
+                        <h3>What are your skills?</h3>
+                    </div>
+                    <div class="picker-toolbar">
+                        <span class="picker-counter" id="ob-skillsCounter">0 skills selected</span>
+                        <button class="mini-link" id="ob-clearSkillsBtn" type="button">Clear</button>
+                    </div>
+                    <div class="picker-grid picker-grid--skills" id="ob-skillsPicker"></div>
+                    <div class="ob-step__actions">
+                        <button class="btn btn--ghost" id="ob_backStep3" type="button">Back</button>
+                        <button class="btn btn--primary" id="ob_saveBtn" type="button">Complete profile</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Toast container -->

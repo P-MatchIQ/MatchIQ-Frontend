@@ -62,7 +62,7 @@ async function resolve() {
         </div>`;
 
     try {
-        const response = await fetch(route.html);
+        const response = await fetch(route.html + '?v=' + Date.now());
         const html = await response.text();
         container.innerHTML = html;
         container.classList.remove('view-enter');

@@ -808,10 +808,85 @@ select{
   color: var(--bg-800);
 }
 
+/* Onboarding form grid */
+.ob-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ob-field--full {
+  grid-column: 1 / -1;
+}
+
+.ob-form-grid .field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-600);
+  margin-bottom: 6px;
+}
+
+.ob-form-grid .field input,
+.ob-form-grid .field select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(125, 160, 202, 0.25);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--bg-800);
+  background: #f8f9fc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.ob-form-grid .field input:focus,
+.ob-form-grid .field select:focus {
+  outline: none;
+  border-color: var(--emerald);
+  box-shadow: 0 0 0 3px rgba(88, 199, 141, 0.15);
+  background: #fff;
+}
+
+@media (max-width: 520px) {
+  .ob-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ob-step__actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-top: 24px;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 16px 0 4px;
+  border-top: 1px solid rgba(125, 160, 202, 0.15);
+  gap: 12px;
+}
+
+.ob-step__actions .btn:only-child {
+  margin-left: auto;
+}
+
+/* Button spinner for loading states */
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
 }
 
 .ob-step--hidden {

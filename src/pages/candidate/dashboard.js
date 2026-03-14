@@ -290,40 +290,94 @@ function hideOnboarding() {
 }
 
 function initOnboarding() {
-  const steps = [$("#ob-step-1"), $("#ob-step-2"), $("#ob-step-3")];
+  const overlay = document.getElementById('onboardingOverlay');
+  if (!overlay) return;
+
+  const card = overlay.querySelector('.onboarding-card');
+  if (!card) return;
 
   function goToStep(index) {
-    steps.forEach((s, i) => s.classList.toggle("ob-step--hidden", i !== index));
+    const allSteps = card.querySelectorAll('[id^="ob-step-"]');
+    allSteps.forEach((el, i) => {
+      if (i === index) {
+        el.style.display = '';
+        el.classList.remove("ob-step--hidden");
+      } else {
+        el.style.display = 'none';
+        el.classList.add("ob-step--hidden");
+      }
+    });
     const percentages = ["33%", "66%", "100%"];
-    const bar = $("#ob-progressBar");
-    if (bar) bar.style.width = percentages[index];
+    const bar = overlay.querySelector("#ob-progressBar");
+    if (bar) bar.style.width = percentages[index] || "100%";
   }
 
   goToStep(0);
 
+  const continueBtn = card.querySelector("#ob_nextStep1");
+  if (!continueBtn) return;
+
   // Step 1 → 2
-  $("#ob_nextStep1")?.addEventListener("click", async () => {
-    const alertEl = $("#onboardingAlert");
-    const first_name = $("#ob_firstName")?.value.trim();
-    const last_name = $("#ob_lastName")?.value.trim();
+  continueBtn.addEventListener("click", async () => {
+    const alertEl = card.querySelector("#onboardingAlert");
+    const btn = continueBtn;
+    const first_name = card.querySelector("#ob_firstName")?.value.trim();
+    const last_name = card.querySelector("#ob_lastName")?.value.trim();
+    const experience_years = Number(card.querySelector("#ob_experience")?.value || 0);
+    const english_level = card.querySelector("#ob_english")?.value;
+    const seniority = card.querySelector("#ob_seniority")?.value;
 
     if (!first_name || !last_name) {
       setAlert(alertEl, "Please enter your first and last name.", "error");
       return;
     }
 
-    setAlert(alertEl, "");
-    goToStep(1);
+    if (!seniority) {
+      setAlert(alertEl, "Please select your seniority level.", "error");
+      return;
+    }
 
+    if (!english_level) {
+      setAlert(alertEl, "Please select your English level.", "error");
+      return;
+    }
+
+    // Save step 1 data to state for later use
+    state.onboardingStep1 = { first_name, last_name, experience_years, english_level, seniority };
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-spinner"></span> Loading...`;
+
+    setAlert(alertEl, "");
+
+    // Ensure categories are loaded
+    if (!state.categories || state.categories.length === 0) {
+      try {
+        state.categories = await getCategories();
+      } catch (e) {
+        console.error("Failed to load categories:", e);
+        setAlert(alertEl, "Could not load categories. Please try again.", "error");
+        btn.disabled = false;
+        btn.textContent = "Continue";
+        return;
+      }
+    }
+
+    goToStep(1);
     state.selectedCategories = [];
     state.selectedSkills = [];
     state.allSkills = [];
     renderCategoriesPicker("ob-categoriesPicker");
+
+    // Restore button
+    btn.disabled = false;
+    btn.textContent = "Continue";
   });
 
   // Step 2 → 3
-  $("#ob_nextStep2")?.addEventListener("click", async () => {
-    const alertEl = $("#onboardingAlert");
+  card.querySelector("#ob_nextStep2")?.addEventListener("click", async () => {
+    const alertEl = card.querySelector("#onboardingAlert");
 
     if (!state.selectedCategories.length) {
       setAlert(alertEl, "Please select at least one category to continue.", "error");
@@ -339,19 +393,21 @@ function initOnboarding() {
   });
 
   // Step 3 → save
-  $("#ob_saveBtn")?.addEventListener("click", async () => {
-    const alertEl = $("#onboardingAlert");
+  card.querySelector("#ob_saveBtn")?.addEventListener("click", async () => {
+    const alertEl = card.querySelector("#onboardingAlert");
 
     if (!state.selectedSkills.length) {
       setAlert(alertEl, "Please select at least one skill to continue.", "error");
       return;
     }
 
-    const first_name = $("#ob_firstName")?.value.trim();
-    const last_name = $("#ob_lastName")?.value.trim();
-    const experience_years = Number($("#ob_experience")?.value || 0);
-    const english_level = $("#ob_english")?.value;
-    const seniority = $("#ob_seniority")?.value;
+    // Read step 1 data from state (not DOM, since step 1 may be hidden)
+    const { first_name, last_name, experience_years, english_level, seniority } = state.onboardingStep1 || {};
+
+    if (!first_name || !last_name || !seniority) {
+      setAlert(alertEl, "Missing profile data. Please go back and fill all fields.", "error");
+      return;
+    }
 
     try {
       await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority });
@@ -367,10 +423,21 @@ function initOnboarding() {
   });
 
   // Clear skills in onboarding
-  $("#ob-clearSkillsBtn")?.addEventListener("click", () => {
+  card.querySelector("#ob-clearSkillsBtn")?.addEventListener("click", () => {
     state.selectedSkills = [];
     renderSkillsPicker("ob-skillsPicker");
     updateSkillsCounter("ob-skillsCounter");
+  });
+
+  // Back buttons
+  card.querySelector("#ob_backStep2")?.addEventListener("click", () => {
+    setAlert(card.querySelector("#onboardingAlert"), "");
+    goToStep(0);
+  });
+
+  card.querySelector("#ob_backStep3")?.addEventListener("click", () => {
+    setAlert(card.querySelector("#onboardingAlert"), "");
+    goToStep(1);
   });
 }
 
@@ -397,27 +464,24 @@ export async function initDashboard() {
 
   state.user = user;
 
+  // Load categories (always needed for onboarding/profile edit)
   try {
-    const [profile, categories] = await Promise.all([
-      getCandidateProfile(),
-      getCategories(),
-    ]);
-
-    state.profile = profile;
-    state.categories = categories;
-
-    renderDashboard(profile);
+    state.categories = await getCategories();
   } catch (err) {
-    console.error("Error loading profile:", err);
-    const alertEl = $("#dashboardAlert");
-    if (alertEl) {
-      alertEl.hidden = false;
-      alertEl.textContent = "We couldn't load your profile. Please refresh the page and try again.";
-      alertEl.className = "alert is-error";
-    }
+    console.error("Error loading categories:", err);
+    state.categories = [];
   }
 
-  if (state.profile && !isProfileComplete(state.profile)) {
+  // Load profile (may fail for new users)
+  try {
+    state.profile = await getCandidateProfile();
+    renderDashboard(state.profile);
+  } catch (err) {
+    console.error("Error loading profile:", err);
+    state.profile = {};
+  }
+
+  if (!state.profile || !isProfileComplete(state.profile)) {
     initOnboarding();
     showOnboarding();
   }

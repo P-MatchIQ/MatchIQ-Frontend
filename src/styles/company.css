@@ -1560,6 +1560,15 @@ a {
     gap: 8px;
 }
 
+.match-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(125, 160, 202, 0.12);
+}
+
 .match-card__view-profile {
     font-size: 12px;
     font-weight: 700;

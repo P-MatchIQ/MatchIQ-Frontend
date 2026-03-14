@@ -97,9 +97,11 @@ export async function initMatches(params = {}) {
                 if (Array.isArray(submissions)) {
                     submissions.forEach(s => {
                         if (s.candidate_id) {
+                            // Backend returns "evaluated" or "completed" for finished tests
+                            const isDone = s.status === 'evaluated' || s.status === 'completed';
                             submissionsMap.set(String(s.candidate_id), {
-                                status: s.status || 'pending',
-                                score: s.score,
+                                status: isDone ? 'completed' : (s.status || 'pending'),
+                                score: s.percentage_score ?? s.score,
                                 feedback: s.feedback,
                                 submitted_at: s.submitted_at,
                                 ai_evaluated_at: s.ai_evaluated_at,
@@ -509,18 +511,21 @@ function renderCandidateCard(candidate, index, aiMap) {
     const sub = submissionsMap.get(String(candidate.candidate_id));
 
     // Build footer test area based on status
-    let testFooterHtml = '';
+    let testBadgeHtml = '';
+    let testActionsHtml = '';
     if (cachedTestInfo) {
         if (sub && sub.status === 'completed') {
-            const score = sub.score != null ? Math.round(sub.score) : '—';
-            testFooterHtml = `
-                <span class="match-card__test-status match-card__test-status--completed">${ICON.check} ${score}%</span>
-                <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
-                <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>`;
+            const score = sub.score != null ? Math.round(sub.score) : '--';
+            testBadgeHtml = `<span class="match-card__test-status match-card__test-status--completed">${ICON.check} ${score}%</span>`;
+            testActionsHtml = `
+                <div class="match-card__actions">
+                    <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
+                    <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>
+                </div>`;
         } else if (sub) {
-            testFooterHtml = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;
+            testBadgeHtml = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;
         } else {
-            testFooterHtml = `
+            testBadgeHtml = `
                 <button class="match-card__send-test" data-candidate-id="${candidate.candidate_id}">
                     ${ICON.test} Send Test
                 </button>`;
@@ -561,8 +566,9 @@ function renderCandidateCard(candidate, index, aiMap) {
 
             <div class="match-card__footer">
                 <span class="match-card__view-profile">View profile ${ICON.arrow}</span>
-                ${testFooterHtml}
+                ${testBadgeHtml}
             </div>
+            ${testActionsHtml}
         </div>
     </article>`;
 }
