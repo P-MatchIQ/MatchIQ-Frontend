@@ -5,10 +5,10 @@ export async function getCandidateProfile() {
   return apiFetch("/candidate/profile", { method: "GET" });
 }
 
-export async function updateCandidateProfile({ first_name, last_name, experience_years, seniority, english_level }) {
+export async function updateCandidateProfile({ first_name, last_name, experience_years, seniority, english_level, github_link }) {
   return apiFetch("/candidate/profile", {
     method: "PATCH",
-    body: JSON.stringify({ first_name, last_name, experience_years, seniority, english_level }),
+    body: JSON.stringify({ first_name, last_name, experience_years, seniority, english_level, github_link }),
   });
 }
 

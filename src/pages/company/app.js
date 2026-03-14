@@ -22,16 +22,16 @@ export function showToast(message, type = 'success') {
 /** Modal de confirmación */
 export function showConfirmModal(title, message) {
     return new Promise((resolve) => {
-        const overlay = document.getElementById('modal-overlay');
+        const dialog = document.getElementById('confirm-dialog');
         document.getElementById('modal-title').textContent = title;
         document.getElementById('modal-message').textContent = message;
-        overlay.classList.add('is-open');
+        dialog.showModal();
 
         const confirmBtn = document.getElementById('modal-confirm');
         const cancelBtn = document.getElementById('modal-cancel');
 
         function cleanup(result) {
-            overlay.classList.remove('is-open');
+            dialog.close();
             confirmBtn.removeEventListener('click', onConfirm);
             cancelBtn.removeEventListener('click', onCancel);
             resolve(result);
@@ -57,13 +57,20 @@ export function showOfferModal(offer, actionsHtml, onActionClick) {
         active: '<span class="pill pill--active">Active</span>',
         in_process: '<span class="pill pill--in-process">In Process</span>',
         closed: '<span class="pill pill--closed">Closed</span>',
-        cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
+        cancelled: '<span class="pill pill--closed">Closed</span>',
     };
     document.getElementById('offer-modal-status').innerHTML = statusMap[offer.status] || `<span class="pill">${offer.status}</span>`;
 
-    const rawTags = [...(offer.categories || []), ...(offer.skills || [])];
-    const tags = rawTags.map(t => typeof t === 'object' ? t.name : t);
-    document.getElementById('offer-modal-meta').innerHTML = tags.map(t => `<span class="offer-card__tag">${t}</span>`).join('');
+    const categories = (offer.categories || []).map(t => typeof t === 'object' ? t.name : t);
+    const skills = (offer.skills || []).map(t => typeof t === 'object' ? t.name : t);
+    let metaHtml = '';
+    if (categories.length > 0) {
+        metaHtml += `<div style="margin-bottom: 8px;"><strong style="color: var(--text-600); font-size: 0.8rem; display: block; margin-bottom: 4px;">Categories</strong><div style="display: flex; flex-wrap: wrap; gap: 6px;">${categories.map(t => `<span class="offer-card__tag">${t}</span>`).join('')}</div></div>`;
+    }
+    if (skills.length > 0) {
+        metaHtml += `<div><strong style="color: var(--text-600); font-size: 0.8rem; display: block; margin-bottom: 4px;">Skills</strong><div style="display: flex; flex-wrap: wrap; gap: 6px;">${skills.map(t => `<span class="offer-card__tag" style="background: rgba(16,185,129,0.10); color: #059669; border-color: rgba(16,185,129,0.25);">${t}</span>`).join('')}</div></div>`;
+    }
+    document.getElementById('offer-modal-meta').innerHTML = metaHtml;
 
     const modalityMap = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'Onsite' };
     document.getElementById('offer-modal-exp').textContent = offer.min_experience_years ? `${offer.min_experience_years} years` : '0 years';

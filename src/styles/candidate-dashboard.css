@@ -185,7 +185,7 @@ select{
 }
 
 .summary-card--highlight{
-  background:linear-gradient(180deg,#5e84c3 0%, #233e8d 100%);
+  background:linear-gradient(180deg,var(--emerald),var(--emerald-dark));
   color:#fff;
 }
 
@@ -573,7 +573,8 @@ select{
 
 .picker-grid--skills{
   max-height:300px;
-  overflow:auto;
+  overflow-y:auto;
+  overflow-x:hidden;
   padding-right:4px;
 }
 

@@ -2,7 +2,7 @@
 // Renderiza la lista de ofertas con filtros y acciones
 // (editar, cerrar, cancelar con confirmación).
 
-import { getOffers, closeOffer, cancelOffer } from '../../api/offersApi.js';
+import { getOffers, getOfferById, closeOffer, cancelOffer } from '../../api/offersApi.js';
 import { getFullGorillaTest, getTestInfo } from '../../api/testsApi.js';
 import { showToast, showConfirmModal, showOfferModal } from './app.js';
 
@@ -13,11 +13,11 @@ const STATUS_LABELS = {
     active: { label: 'Active', cls: 'pill--active' },
     in_process: { label: 'In Process', cls: 'pill--in-process' },
     closed: { label: 'Closed', cls: 'pill--closed' },
-    cancelled: { label: 'Cancelled', cls: 'pill--cancelled' },
+    cancelled: { label: 'Closed', cls: 'pill--closed' },
 };
 
 let allOffers = [];
-let filter = 'all';
+let filter = 'open';
 
 /**
  * Inicializa la vista de lista de ofertas.
@@ -34,7 +34,7 @@ export async function initOffers() {
     }
 
     allOffers = await getOffers();
-    filter = 'all';
+    filter = 'open';
 
     // Setup filtros
     const filtersContainer = document.getElementById('offer-filters');
@@ -60,7 +60,9 @@ function renderOffers() {
 
     const filtered = filter === 'all'
         ? allOffers
-        : allOffers.filter(o => o.status === filter);
+        : filter === 'closed'
+            ? allOffers.filter(o => o.status === 'closed' || o.status === 'cancelled')
+            : allOffers.filter(o => o.status === filter);
 
     if (filtered.length === 0) {
         container.innerHTML = `
@@ -131,7 +133,7 @@ function renderOfferCard(offer) {
             <a href="#/matches/${offer.id}" class="btn btn--icon btn--sm" onclick="event.stopPropagation()" title="Find Matches"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></a>
             <button class="btn btn--ghost btn--sm" data-action="view-test" data-id="${offer.id}">View Test</button>
             <a href="#/offers/edit/${offer.id}" class="btn btn--ghost btn--sm">Edit</a>
-            <button class="btn btn--danger btn--sm" data-action="cancel" data-id="${offer.id}">Cancel</button>
+            <button class="btn btn--danger btn--sm" data-action="cancel" data-id="${offer.id}">Close</button>
         </div>` : ''}
     </article>`;
 }
@@ -146,9 +148,10 @@ async function handleAction(e) {
         const card = e.target.closest('.offer-card');
         if (card) {
             const cardId = card.dataset.id;
-            const offer = allOffers.find(o => String(o.id) === String(cardId));
-            if (offer) {
-                showOfferModal(offer);
+            const listOffer = allOffers.find(o => String(o.id) === String(cardId));
+            if (listOffer) {
+                const fullOffer = await getOfferById(cardId);
+                showOfferModal(fullOffer || listOffer);
             }
         }
         return;
@@ -171,13 +174,13 @@ async function handleAction(e) {
 
     if (action === 'cancel') {
         const confirmed = await showConfirmModal(
-            'Cancel offer',
-            'Are you sure you want to cancel this offer? This action cannot be undone.'
+            'Close offer',
+            'Are you sure you want to close this offer? This action cannot be undone.'
         );
         if (!confirmed) return;
 
         await cancelOffer(id);
-        showToast('Offer cancelled.');
+        showToast('Offer closed.');
         allOffers = await getOffers();
         renderOffers();
     }
@@ -220,14 +223,14 @@ function openOfferTestPreview(test) {
             <p class="preview-question__text">${esc(q.question)}</p>
             <div class="preview-question__options">
                 ${Object.entries(q.options || {}).map(([key, value]) => {
-                    const isCorrect = key === q.correct_answer;
-                    return `
+        const isCorrect = key === q.correct_answer;
+        return `
                         <div class="preview-option ${isCorrect ? 'preview-option--correct' : ''}">
                             <span class="preview-option__key">${key}</span>
                             <span class="preview-option__text">${esc(value)}</span>
                             ${isCorrect ? '<span class="preview-option__badge">Correct</span>' : ''}
                         </div>`;
-                }).join('')}
+    }).join('')}
             </div>
         </div>
     `).join('');

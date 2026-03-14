@@ -18,6 +18,7 @@ const ICON = {
     clock: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
     check: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
     arrow: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+    discard: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
 };
 
 const ICON_LG = {
@@ -74,7 +75,7 @@ export async function initMatches(params = {}) {
     container.innerHTML = `
         <div class="page-loader" style="grid-column: 1 / -1;">
             <div class="page-loader__spinner"></div>
-            <span class="page-loader__text">Running matching algorithm…</span>
+            <span class="page-loader__text">Running matching…</span>
         </div>`;
 
     try {
@@ -183,6 +184,15 @@ export async function initMatches(params = {}) {
                 return;
             }
 
+            // Discard Candidate button click
+            const discardBtn = e.target.closest('.match-card__discard');
+            if (discardBtn) {
+                e.stopPropagation();
+                const candidateId = discardBtn.dataset.candidateId;
+                if (candidateId) handleDiscardCandidate(candidateId);
+                return;
+            }
+
             // AI toggle
             const toggle = e.target.closest('.match-card__ai-toggle');
             if (toggle) {
@@ -203,8 +213,6 @@ export async function initMatches(params = {}) {
             }
         });
 
-        // Modal close handlers
-        setupModalClose();
 
     } catch (err) {
         console.error('Matching error:', err);
@@ -231,7 +239,7 @@ async function handleSendTest(candidateId) {
     // Simple confirmation before sending
     const confirmed = await showConfirmModal(
         'Send Test',
-        `Are you sure you want to send the Gorilla Test to ${name}?`
+        `Are you sure you want to send the test to ${name}?`
     );
 
     if (!confirmed) return;
@@ -311,69 +319,82 @@ async function handlePassToNextFilter(candidateId) {
     }
 }
 
+/* ── Discard Candidate ─────────────────────────────────────────── */
+
+async function handleDiscardCandidate(candidateId) {
+    const candidate = candidatesMap.get(candidateId);
+    if (!candidate) return;
+
+    const name = getCandidateName(candidate);
+
+    const confirmed = await showConfirmModal(
+        'Discard Candidate',
+        `Are you sure you want to discard ${name}? An email will be sent to notify them that they were not selected.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await notifyCandidate(currentOfferId, candidateId, 'rejected');
+    } catch (err) {
+        console.warn('Notification failed:', err.message);
+    }
+
+    showToast(`${name} has been discarded. Notification sent.`, 'success');
+
+    // Update the card actions visually
+    const actionsEl = document.querySelector(`.match-card[data-candidate-id="${candidateId}"] .match-card__actions`);
+    if (actionsEl) {
+        actionsEl.innerHTML = `<span class="match-card__test-status match-card__test-status--discarded">${ICON.discard} Discarded</span>`;
+    }
+
+    // Update modal if open
+    const modalDiscardBtn = document.getElementById('modal-discard-btn');
+    if (modalDiscardBtn && modalDiscardBtn.dataset.candidateId === candidateId) {
+        modalDiscardBtn.classList.remove('btn--danger');
+        modalDiscardBtn.classList.add('btn--ghost');
+        modalDiscardBtn.innerHTML = `${ICON.discard} Discarded`;
+        modalDiscardBtn.disabled = true;
+    }
+}
+
 /* ── Modal ──────────────────────────────────────────────────────── */
 
 function openCandidateModal(candidateId) {
     const modal = document.getElementById('candidateModal');
+    const contentEl = document.getElementById('candidateModalContent');
     const candidate = candidatesMap.get(candidateId);
-    if (!modal || !candidate) return;
+    if (!modal || !contentEl || !candidate) return;
 
     const ai = aiMapGlobal.get(candidateId);
     const pct = Math.round(candidate.final_match_percentage || 0);
     const name = getCandidateName(candidate);
+    const email = candidate.email || '';
+    const github_link = candidate.github_link || '';
 
     const skills = candidate.matched_skills
         ? (typeof candidate.matched_skills === 'string' ? candidate.matched_skills.split(',') : candidate.matched_skills)
         : [];
 
+    // Email row
+    const emailHtml = email ? `
+        <div class="candidate-modal__email-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span class="candidate-modal__email-text">${esc(email)}</span>
+            <button type="button" class="candidate-modal__copy-btn" id="copy-email-btn" title="Copy email">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </button>
+        </div>` : '';
 
+    // GitHub row
+    const githubHtml = github_link ? `
+        <div class="candidate-modal__email-row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            <a href="${esc(github_link)}" target="_blank" rel="noopener noreferrer" class="candidate-modal__email-text" style="color: var(--accent); text-decoration: none;">${esc(github_link)}</a>
+        </div>` : '';
 
-    // Header
-    document.getElementById('modal-candidate-name').textContent = name;
-    document.getElementById('modal-candidate-email').textContent = candidate.email || '';
-
-    // Score section
-    document.getElementById('modal-score-section').innerHTML = `
-        <div class="candidate-modal__score-card">
-            <div class="match-card__score match-card__score--lg" style="--pct: ${pct}">
-                <svg class="match-card__gauge" viewBox="0 0 36 36">
-                    <path class="match-card__gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="match-card__gauge-fill" stroke-dasharray="${pct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                </svg>
-                <span class="match-card__pct match-card__pct--lg">${pct}%</span>
-            </div>
-            <div>
-                <strong class="candidate-modal__score-label">Match Score</strong>
-                <span class="candidate-modal__rank-label">Ranked #${candidate.rank}</span>
-            </div>
-        </div>`;
-
-    // Details grid
-    document.getElementById('modal-details-grid').innerHTML = `
-        <div class="candidate-modal__detail">
-            <span class="candidate-modal__detail-icon">${ICON_LG.experience}</span>
-            <div>
-                <span class="candidate-modal__detail-label">Experience</span>
-                <strong>${candidate.experience_years != null ? `${candidate.experience_years} years` : '—'}</strong>
-            </div>
-        </div>
-        <div class="candidate-modal__detail">
-            <span class="candidate-modal__detail-icon">${ICON_LG.english}</span>
-            <div>
-                <span class="candidate-modal__detail-label">English Level</span>
-                <strong>${esc(candidate.english_level || '—')}</strong>
-            </div>
-        </div>
-        <div class="candidate-modal__detail">
-            <span class="candidate-modal__detail-icon">${ICON_LG.seniority}</span>
-            <div>
-                <span class="candidate-modal__detail-label">Seniority</span>
-                <strong>${esc(candidate.seniority || '—')}</strong>
-            </div>
-        </div>`;
-
-    // Skills
-    document.getElementById('modal-skills-section').innerHTML = skills.length > 0 ? `
+    // Skills html
+    const skillsHtml = skills.length > 0 ? `
         <div class="candidate-modal__section">
             <h4>Matched Skills</h4>
             <div class="match-card__skills">
@@ -381,116 +402,184 @@ function openCandidateModal(candidateId) {
             </div>
         </div>` : '';
 
-    // AI evaluation
+    // AI html
+    let aiHtml = '';
     if (ai) {
         const rec = REC_COLORS[ai.recommendation] || REC_COLORS.moderate;
-        document.getElementById('modal-ai-section').innerHTML = `
-            <div class="candidate-modal__section">
-                <h4>AI Evaluation</h4>
-                <div class="match-card__ai-badge" style="background:${rec.bg}; border-color:${rec.border}; color:${rec.text}; margin-bottom: 12px;">
-                    ${rec.label} match${ai.fit_score != null ? ` · ${ai.fit_score}/100` : ''}
-                </div>
-                <p class="ai-insight">${esc(ai.insight || '')}</p>
-                ${ai.strengths?.length ? `
-                <div class="ai-list ai-list--strengths">
-                    <strong>Strengths</strong>
-                    <ul>${ai.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul>
-                </div>` : ''}
-                ${ai.risks?.length ? `
-                <div class="ai-list ai-list--risks">
-                    <strong>Risks</strong>
-                    <ul>${ai.risks.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
-                </div>` : ''}
-            </div>`;
-    } else {
-        document.getElementById('modal-ai-section').innerHTML = '';
+        aiHtml = `
+        <div class="candidate-modal__section">
+            <h4>AI Evaluation</h4>
+            <div class="match-card__ai-badge" style="background:${rec.bg}; border-color:${rec.border}; color:${rec.text}; margin-bottom: 12px;">
+                ${rec.label} match${ai.fit_score != null ? ` · ${ai.fit_score}/100` : ''}
+            </div>
+            <p class="ai-insight">${esc(ai.insight || '')}</p>
+            ${ai.strengths?.length ? `
+            <div class="ai-list ai-list--strengths">
+                <strong>Strengths</strong>
+                <ul>${ai.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul>
+            </div>` : ''}
+            ${ai.risks?.length ? `
+            <div class="ai-list ai-list--risks">
+                <strong>Risks</strong>
+                <ul>${ai.risks.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
+            </div>` : ''}
+        </div>`;
     }
 
-    // Test section in modal — shows status + results
-    const testSection = document.getElementById('modal-test-section');
-    if (testSection && cachedTestInfo) {
+    // Test section html
+    let testHtml = '';
+    if (cachedTestInfo) {
         const sub = submissionsMap.get(String(candidateId));
-
         if (sub && sub.status === 'completed') {
-            // Completed — show results + pass to next filter
             const score = sub.score != null ? Math.round(sub.score) : '—';
-            testSection.innerHTML = `
-                <div class="candidate-modal__section candidate-modal__test-action">
-                    <h4>${ICON.test} Test Results</h4>
-                    <div class="modal-results-card">
-                        <div class="modal-results-card__stat">
-                            <span class="modal-results-card__label">Score</span>
-                            <strong class="modal-results-card__value">${score}%</strong>
-                        </div>
-                        ${sub.feedback ? `
-                        <div class="modal-results-card__feedback">
-                            <span class="modal-results-card__label">Feedback</span>
-                            <p>${esc(sub.feedback)}</p>
-                        </div>` : ''}
+            testHtml = `
+            <div class="candidate-modal__section candidate-modal__test-action">
+                <h4>${ICON.test} Test Results</h4>
+                <div class="modal-results-card">
+                    <div class="modal-results-card__stat">
+                        <span class="modal-results-card__label">Score</span>
+                        <strong class="modal-results-card__value">${score}%</strong>
                     </div>
-                    <button class="btn btn--primary btn--full" id="modal-pass-filter-btn" data-candidate-id="${candidateId}" style="margin-top: 12px;">
+                    ${sub.feedback ? `
+                    <div class="modal-results-card__feedback">
+                        <span class="modal-results-card__label">Feedback</span>
+                        <p>${esc(sub.feedback)}</p>
+                    </div>` : ''}
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button class="btn btn--primary" style="flex: 1;" id="modal-pass-filter-btn" data-candidate-id="${candidateId}">
                         Pass to Next Filter ${ICON.arrow}
                     </button>
-                </div>`;
-
-            const passBtn = document.getElementById('modal-pass-filter-btn');
-            if (passBtn) {
-                passBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handlePassToNextFilter(candidateId);
-                });
-            }
+                    <button class="btn btn--danger" style="flex: 1;" id="modal-discard-btn" data-candidate-id="${candidateId}">
+                        ${ICON.discard} Discard
+                    </button>
+                </div>
+            </div>`;
         } else if (sub) {
-            // Pending — test sent, waiting for candidate
-            testSection.innerHTML = `
-                <div class="candidate-modal__section candidate-modal__test-action">
-                    <h4>${ICON.test} Gorilla Test</h4>
-                    <div class="modal-results-card modal-results-card--pending">
-                        <span>${ICON.clock} Test has been sent. Waiting for the candidate to complete it.</span>
-                    </div>
-                    <button class="btn btn--ghost btn--full" id="modal-send-test-btn" data-candidate-id="${candidateId}" disabled>
-                        ${ICON.clock} Test Pending
-                    </button>
-                </div>`;
+            testHtml = `
+            <div class="candidate-modal__section candidate-modal__test-action">
+                <h4>${ICON.test} Test</h4>
+                <div class="modal-results-card modal-results-card--pending">
+                    <span>${ICON.clock} Test has been sent. Waiting for the candidate to complete it.</span>
+                </div>
+                <button class="btn btn--ghost btn--full" disabled>
+                    ${ICON.clock} Test Pending
+                </button>
+            </div>`;
         } else {
-            // Not sent yet
-            testSection.innerHTML = `
-                <div class="candidate-modal__section candidate-modal__test-action">
-                    <h4><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Gorilla Test</h4>
-                    <p class="muted" style="margin-bottom: 12px;">Send a technical assessment to evaluate this candidate's skills.</p>
-                    <button class="btn btn--primary btn--full" id="modal-send-test-btn" data-candidate-id="${candidateId}">
-                        Send Gorilla Test
-                    </button>
-                </div>`;
-
-            const modalSendBtn = document.getElementById('modal-send-test-btn');
-            if (modalSendBtn) {
-                modalSendBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleSendTest(candidateId);
-                });
-            }
+            testHtml = `
+            <div class="candidate-modal__section candidate-modal__test-action">
+                <h4><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 6px;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Test</h4>
+                <p class="muted" style="margin-bottom: 12px;">Send a technical assessment to evaluate this candidate's skills.</p>
+                <button class="btn btn--primary btn--full" id="modal-send-test-btn" data-candidate-id="${candidateId}">
+                    Send Test
+                </button>
+            </div>`;
         }
-    } else if (testSection) {
-        testSection.innerHTML = '';
     }
+
+    // Build full content
+    contentEl.innerHTML = `
+        <div class="candidate-modal__head">
+            <div>
+                <h3>${esc(name)}</h3>
+                ${emailHtml}
+                ${githubHtml}
+            </div>
+            <button class="modal-close-btn" id="closeCandidateModal" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+        </div>
+
+        <div class="candidate-modal__score-section">
+            <div class="candidate-modal__score-card">
+                <div class="match-card__score match-card__score--lg" style="--pct: ${pct}">
+                    <svg class="match-card__gauge" viewBox="0 0 36 36">
+                        <path class="match-card__gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="match-card__gauge-fill" stroke-dasharray="${pct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span class="match-card__pct match-card__pct--lg">${pct}%</span>
+                </div>
+                <div>
+                    <strong class="candidate-modal__score-label">Match Score</strong>
+                    <span class="candidate-modal__rank-label">Ranked #${candidate.rank}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="candidate-modal__grid">
+            <div class="candidate-modal__detail">
+                <span class="candidate-modal__detail-icon">${ICON_LG.experience}</span>
+                <div>
+                    <span class="candidate-modal__detail-label">Experience</span>
+                    <strong>${candidate.experience_years != null ? `${candidate.experience_years} years` : '—'}</strong>
+                </div>
+            </div>
+            <div class="candidate-modal__detail">
+                <span class="candidate-modal__detail-icon">${ICON_LG.english}</span>
+                <div>
+                    <span class="candidate-modal__detail-label">English Level</span>
+                    <strong>${esc(candidate.english_level || '—')}</strong>
+                </div>
+            </div>
+            <div class="candidate-modal__detail">
+                <span class="candidate-modal__detail-icon">${ICON_LG.seniority}</span>
+                <div>
+                    <span class="candidate-modal__detail-label">Seniority</span>
+                    <strong>${esc(candidate.seniority || '—')}</strong>
+                </div>
+            </div>
+            <div class="candidate-modal__detail">
+                <span class="candidate-modal__detail-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span>
+                <div>
+                    <span class="candidate-modal__detail-label">GitHub</span>
+                    ${github_link
+                        ? `<a href="${esc(github_link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; word-break: break-all;">${esc(github_link)}</a>`
+                        : '<strong>—</strong>'}
+                </div>
+            </div>
+        </div>
+
+        ${skillsHtml}
+        ${aiHtml}
+        ${testHtml}
+    `;
+
+    // Wire up event listeners on dynamically created elements
+    const closeBtn = contentEl.querySelector('#closeCandidateModal');
+    if (closeBtn) closeBtn.addEventListener('click', () => modal.close());
+
+    const copyBtn = contentEl.querySelector('#copy-email-btn');
+    if (copyBtn && email) {
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(email);
+                copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+                copyBtn.title = 'Copied!';
+                showToast('Email copied to clipboard!', 'success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`;
+                    copyBtn.title = 'Copy email';
+                }, 2000);
+            } catch (err) {
+                showToast('Failed to copy email', 'error');
+            }
+        });
+    }
+
+    const passBtn = contentEl.querySelector('#modal-pass-filter-btn');
+    if (passBtn) passBtn.addEventListener('click', (e) => { e.stopPropagation(); handlePassToNextFilter(candidateId); });
+
+    const discardBtn = contentEl.querySelector('#modal-discard-btn');
+    if (discardBtn) discardBtn.addEventListener('click', (e) => { e.stopPropagation(); handleDiscardCandidate(candidateId); });
+
+    const sendTestBtn = contentEl.querySelector('#modal-send-test-btn');
+    if (sendTestBtn) sendTestBtn.addEventListener('click', (e) => { e.stopPropagation(); handleSendTest(candidateId); });
+
+    // Close on backdrop click
+    modal.onclick = (e) => { if (e.target === modal) modal.close(); };
 
     modal.showModal();
 }
 
-function setupModalClose() {
-    const modal = document.getElementById('candidateModal');
-    const closeBtn = document.getElementById('closeCandidateModal');
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => modal.close());
-    }
-
-    // Close on backdrop click
-    modal?.addEventListener('click', (e) => {
-        if (e.target === modal) modal.close();
-    });
-}
 
 /* ── Render ─────────────────────────────────────────────────────── */
 
@@ -516,6 +605,7 @@ function renderCandidateCard(candidate, index, aiMap) {
                 <div class="match-card__actions">
                     <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
                     <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>
+                    <button class="match-card__discard" data-candidate-id="${candidate.candidate_id}">${ICON.discard} Discard</button>
                 </div>`;
         } else if (sub) {
             testBadgeHtml = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;

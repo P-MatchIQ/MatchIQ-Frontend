@@ -61,6 +61,15 @@ function renderProfile(profile) {
   const seniority = profile.seniority;
   $("#seniorityValue").textContent = seniority ? seniority.charAt(0).toUpperCase() + seniority.slice(1) : "-";
 
+  const githubEl = $("#githubValue");
+  if (githubEl) {
+    if (profile.github_link) {
+      githubEl.innerHTML = `<a href="${profile.github_link}" target="_blank" rel="noopener noreferrer">${profile.github_link}</a>`;
+    } else {
+      githubEl.textContent = "-";
+    }
+  }
+
   renderTags($("#categoriesTags"), (profile.categories || []).map((c) => c.name));
   renderTags($("#skillsTags"), (profile.skills || []).map((s) => s.name));
 }
@@ -104,10 +113,12 @@ function renderCategoriesPicker() {
         }
       } else {
         state.selectedCategories = state.selectedCategories.filter((c) => c.id !== cat.id);
-        state.selectedSkills = state.selectedSkills.filter((s) => s.category_id !== cat.id);
       }
       const categoryIds = state.selectedCategories.map((c) => c.id);
-      state.allSkills = await loadSkillsForCategories(categoryIds);
+      state.allSkills = categoryIds.length ? await loadSkillsForCategories(categoryIds) : [];
+      // Keep only skills that belong to the current available skills
+      const validSkillIds = new Set(state.allSkills.map((s) => s.id));
+      state.selectedSkills = state.selectedSkills.filter((s) => validSkillIds.has(s.skill_id));
       renderSkillsPicker();
       updateSkillsCounter();
     });
@@ -183,18 +194,23 @@ async function fillProfileForm() {
   $("#experienceInput").value = profile.experience_years ?? "";
   $("#englishInput").value = profile.english_level || "";
   $("#seniorityInput").value = profile.seniority || "";
+  $("#githubInput").value = profile.github_link || "";
 
   state.selectedCategories = (profile.categories || []).map((c) => ({ id: c.id, name: c.name }));
 
   const categoryIds = state.selectedCategories.map((c) => c.id);
   state.allSkills = categoryIds.length ? await loadSkillsForCategories(categoryIds) : [];
 
-  state.selectedSkills = (profile.skills || []).map((s) => ({
-    skill_id: s.id,
-    name: s.name,
-    level: s.level || 3,
-    category_id: s.category_id,
-  }));
+  // Only keep skills that belong to the currently selected categories
+  const validSkillIds = new Set(state.allSkills.map((s) => s.id));
+  state.selectedSkills = (profile.skills || [])
+    .filter((s) => validSkillIds.has(s.id))
+    .map((s) => ({
+      skill_id: s.id,
+      name: s.name,
+      level: s.level || 3,
+      category_id: s.category_id,
+    }));
 
   renderCategoriesPicker();
   renderSkillsPicker();
@@ -211,6 +227,7 @@ async function saveProfile() {
   const experience_years = Number($("#experienceInput")?.value);
   const english_level = $("#englishInput")?.value;
   const seniority = $("#seniorityInput")?.value;
+  const github_link = $("#githubInput")?.value.trim();
 
   if (!first_name || !last_name) {
     setAlert(alertEl, "Please enter your first and last name.", "error");
@@ -228,7 +245,7 @@ async function saveProfile() {
   }
 
   try {
-    await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority });
+    await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority, github_link });
     await updateCandidateCategories(state.selectedCategories.map((c) => c.id));
     await updateCandidateSkills(state.selectedSkills.map((s) => ({ skill_id: s.skill_id, level: s.level })));
 
@@ -282,6 +299,16 @@ export async function initProfile() {
 
     state.profile = profile;
     state.categories = categories;
+
+    // Filter skills to only show those belonging to selected categories
+    const profileCategoryIds = (profile.categories || []).map((c) => c.id);
+    if (profileCategoryIds.length) {
+      const validSkills = await loadSkillsForCategories(profileCategoryIds);
+      const validSkillIds = new Set(validSkills.map((s) => s.id));
+      profile.skills = (profile.skills || []).filter((s) => validSkillIds.has(s.id));
+    } else {
+      profile.skills = [];
+    }
 
     renderProfile(profile);
   } catch (err) {

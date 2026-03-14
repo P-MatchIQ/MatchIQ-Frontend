@@ -326,6 +326,7 @@ function initOnboarding() {
     const experience_years = Number(card.querySelector("#ob_experience")?.value || 0);
     const english_level = card.querySelector("#ob_english")?.value;
     const seniority = card.querySelector("#ob_seniority")?.value;
+    const github_link = card.querySelector("#ob_github")?.value.trim();
 
     if (!first_name || !last_name) {
       setAlert(alertEl, "Please enter your first and last name.", "error");
@@ -343,7 +344,7 @@ function initOnboarding() {
     }
 
     // Save step 1 data to state for later use
-    state.onboardingStep1 = { first_name, last_name, experience_years, english_level, seniority };
+    state.onboardingStep1 = { first_name, last_name, experience_years, english_level, seniority, github_link };
 
     // Show loading state
     btn.disabled = true;
@@ -402,7 +403,7 @@ function initOnboarding() {
     }
 
     // Read step 1 data from state (not DOM, since step 1 may be hidden)
-    const { first_name, last_name, experience_years, english_level, seniority } = state.onboardingStep1 || {};
+    const { first_name, last_name, experience_years, english_level, seniority, github_link } = state.onboardingStep1 || {};
 
     if (!first_name || !last_name || !seniority) {
       setAlert(alertEl, "Missing profile data. Please go back and fill all fields.", "error");
@@ -410,7 +411,7 @@ function initOnboarding() {
     }
 
     try {
-      await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority });
+      await updateCandidateProfile({ first_name, last_name, experience_years, english_level, seniority, github_link });
       await updateCandidateCategories(state.selectedCategories.map((c) => c.id));
       await updateCandidateSkills(state.selectedSkills.map((s) => ({ skill_id: s.skill_id, level: s.level })));
 

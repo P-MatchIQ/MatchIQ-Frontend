@@ -11,7 +11,7 @@ const STATUS_PILLS = {
     active: '<span class="pill pill--active">Active</span>',
     in_process: '<span class="pill pill--in-process">In Process</span>',
     closed: '<span class="pill pill--closed">Closed</span>',
-    cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
+    cancelled: '<span class="pill pill--closed">Closed</span>',
 };
 
 function isActiveOffer(offer) {
