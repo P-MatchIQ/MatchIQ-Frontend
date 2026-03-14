@@ -52,6 +52,32 @@ registerRoute('tests', './tests.html', initTests);
 // ── Show layout immediately ──────────────────────────────────────
 document.getElementById('mainLayout').style.display = '';
 
+// ── Theme Toggle ─────────────────────────────────────────────
+const LOGO_LIGHT = '../../src/assets/iconoMatchIQ.png';
+const LOGO_DARK  = '../../src/assets/iconoMatchIQ-light.png';
+
+function updateThemeUI(isDark) {
+    const label = document.querySelector('.theme-toggle__label');
+    const logo  = document.querySelector('.brand__mark');
+    if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+    if (logo)  logo.src = isDark ? LOGO_DARK : LOGO_LIGHT;
+}
+
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('matchiq_theme', 'light');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('matchiq_theme', 'dark');
+    }
+    updateThemeUI(!isDark);
+});
+
+// Set initial label + logo
+updateThemeUI(document.documentElement.getAttribute('data-theme') === 'dark');
+
 // ── Logout ───────────────────────────────────────────────────────
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await authLogout();

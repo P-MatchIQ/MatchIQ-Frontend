@@ -50,6 +50,24 @@ let cachedTestInfo = null;
 let submissionsMap = new Map(); // candidateId → { status, score, feedback, ... }
 let companyName = '';
 
+/* ── Candidate Status Persistence (localStorage) ──────────────── */
+function getCandidateStatusKey(offerId) {
+    return `matchiq_candidate_status_${offerId}`;
+}
+
+function loadCandidateStatuses(offerId) {
+    try {
+        const raw = localStorage.getItem(getCandidateStatusKey(offerId));
+        return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+}
+
+function saveCandidateStatus(offerId, candidateId, status) {
+    const statuses = loadCandidateStatuses(offerId);
+    statuses[String(candidateId)] = status;
+    localStorage.setItem(getCandidateStatusKey(offerId), JSON.stringify(statuses));
+}
+
 /**
  * Initializes the matches view.
  * @param {{ id: string }} params - Must contain offer ID
@@ -303,10 +321,19 @@ async function handlePassToNextFilter(candidateId) {
 
     showToast(`${name} has been passed to the next filter. Notification sent!`, 'success');
 
+    // Persist status
+    saveCandidateStatus(currentOfferId, candidateId, 'passed');
+
     // Update the button visually
     const btn = document.querySelector(`.match-card__pass-filter[data-candidate-id="${candidateId}"]`);
     if (btn) {
         btn.outerHTML = `<span class="match-card__test-status match-card__test-status--passed">${ICON.check} Passed</span>`;
+    }
+
+    // Remove the discard button from the card
+    const discardBtn = document.querySelector(`.match-card__discard[data-candidate-id="${candidateId}"]`);
+    if (discardBtn) {
+        discardBtn.remove();
     }
 
     // Update modal if open
@@ -341,6 +368,9 @@ async function handleDiscardCandidate(candidateId) {
     }
 
     showToast(`${name} has been discarded. Notification sent.`, 'success');
+
+    // Persist status
+    saveCandidateStatus(currentOfferId, candidateId, 'discarded');
 
     // Update the card actions visually
     const actionsEl = document.querySelector(`.match-card[data-candidate-id="${candidateId}"] .match-card__actions`);
@@ -434,8 +464,39 @@ function openCandidateModal(candidateId) {
     let testHtml = '';
     if (cachedTestInfo) {
         const sub = submissionsMap.get(String(candidateId));
+        const savedStatuses = loadCandidateStatuses(currentOfferId);
+        const savedStatus = savedStatuses[String(candidateId)];
+
         if (sub && sub.status === 'completed') {
             const score = sub.score != null ? Math.round(sub.score) : '—';
+
+            let actionButtonsHtml = '';
+            if (savedStatus === 'passed') {
+                actionButtonsHtml = `
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button class="btn btn--ghost" style="flex: 1;" disabled>
+                        ${ICON.check} Passed to Next Filter
+                    </button>
+                </div>`;
+            } else if (savedStatus === 'discarded') {
+                actionButtonsHtml = `
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button class="btn btn--ghost" style="flex: 1;" disabled>
+                        ${ICON.discard} Discarded
+                    </button>
+                </div>`;
+            } else {
+                actionButtonsHtml = `
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button class="btn btn--primary" style="flex: 1;" id="modal-pass-filter-btn" data-candidate-id="${candidateId}">
+                        Pass to Next Filter ${ICON.arrow}
+                    </button>
+                    <button class="btn btn--danger" style="flex: 1;" id="modal-discard-btn" data-candidate-id="${candidateId}">
+                        ${ICON.discard} Discard
+                    </button>
+                </div>`;
+            }
+
             testHtml = `
             <div class="candidate-modal__section candidate-modal__test-action">
                 <h4>${ICON.test} Test Results</h4>
@@ -450,14 +511,7 @@ function openCandidateModal(candidateId) {
                         <p>${esc(sub.feedback)}</p>
                     </div>` : ''}
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 12px;">
-                    <button class="btn btn--primary" style="flex: 1;" id="modal-pass-filter-btn" data-candidate-id="${candidateId}">
-                        Pass to Next Filter ${ICON.arrow}
-                    </button>
-                    <button class="btn btn--danger" style="flex: 1;" id="modal-discard-btn" data-candidate-id="${candidateId}">
-                        ${ICON.discard} Discard
-                    </button>
-                </div>
+                ${actionButtonsHtml}
             </div>`;
         } else if (sub) {
             testHtml = `
@@ -611,16 +665,33 @@ function renderCandidateCard(candidate, index, aiMap) {
     // Build footer test area based on status
     let testBadgeHtml = '';
     let testActionsHtml = '';
+    const savedStatuses = loadCandidateStatuses(currentOfferId);
+    const savedStatus = savedStatuses[String(candidate.candidate_id)];
+
     if (cachedTestInfo) {
         if (sub && sub.status === 'completed') {
             const score = sub.score != null ? Math.round(sub.score) : '--';
             testBadgeHtml = `<span class="match-card__test-status match-card__test-status--completed">${ICON.check} ${score}%</span>`;
-            testActionsHtml = `
-                <div class="match-card__actions">
-                    <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
-                    <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>
-                    <button class="match-card__discard" data-candidate-id="${candidate.candidate_id}">${ICON.discard} Discard</button>
-                </div>`;
+
+            if (savedStatus === 'passed') {
+                testActionsHtml = `
+                    <div class="match-card__actions">
+                        <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
+                        <span class="match-card__test-status match-card__test-status--passed">${ICON.check} Passed</span>
+                    </div>`;
+            } else if (savedStatus === 'discarded') {
+                testActionsHtml = `
+                    <div class="match-card__actions">
+                        <span class="match-card__test-status match-card__test-status--discarded">${ICON.discard} Discarded</span>
+                    </div>`;
+            } else {
+                testActionsHtml = `
+                    <div class="match-card__actions">
+                        <button class="match-card__view-results" data-candidate-id="${candidate.candidate_id}">View Results</button>
+                        <button class="match-card__pass-filter" data-candidate-id="${candidate.candidate_id}">Pass to Next Filter ${ICON.arrow}</button>
+                        <button class="match-card__discard" data-candidate-id="${candidate.candidate_id}">${ICON.discard} Discard</button>
+                    </div>`;
+            }
         } else if (sub) {
             testBadgeHtml = `<span class="match-card__test-status match-card__test-status--pending">${ICON.clock} Pending</span>`;
         } else {
