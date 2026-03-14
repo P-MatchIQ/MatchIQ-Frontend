@@ -74,7 +74,7 @@ export function showOfferModal(offer, actionsHtml, onActionClick) {
     document.getElementById('offer-modal-desc').textContent = offer.description || 'No description provided.';
 
     const actionsContainer = document.getElementById('offer-modal-actions');
-    actionsContainer.innerHTML = actionsHtml + `<button class="btn btn--outline" id="offer-modal-close">Close</button>`;
+    actionsContainer.innerHTML = (actionsHtml || '') + `<button class="btn btn--outline" id="offer-modal-close">Close</button>`;
 
     const clickHandler = (e) => {
         if (e.target.id === 'offer-modal-close') {

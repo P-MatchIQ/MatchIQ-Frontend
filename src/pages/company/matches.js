@@ -6,7 +6,7 @@ import { getOfferById } from '../../api/offersApi.js';
 import { getTestInfo, getTestSubmissions, inviteCandidate } from '../../api/testsApi.js';
 import { getCompanyProfile } from '../../api/companyApi.js';
 import { showToast, showConfirmModal } from './app.js';
-import { notifyTestSent, notifyPassedFilter } from '../../api/n8nApi.js';
+import { notifyCandidate } from '../../api/n8nApi.js';
 
 /* ── SVG Icons ─────────────────────────────────────────────────── */
 const ICON = {
@@ -241,13 +241,10 @@ async function handleSendTest(candidateId) {
         submissionsMap.set(String(candidateId), { status: 'pending', score: null, feedback: null });
         showToast(`Test sent to ${name}`, 'success');
 
-        // Call n8n webhook for email notification
-        notifyTestSent({
-            candidateEmail: candidate.email || '',
-            candidateName: name,
-            offerTitle: currentOfferTitle,
-            companyName,
-        });
+        // Notify candidate via backend (n8n → Gmail)
+        notifyCandidate(currentOfferId, candidateId, 'technical_test').catch(err =>
+            console.warn('Notification failed:', err.message)
+        );
 
         // Update the card footer visually
         const footer = document.querySelector(`.match-card[data-candidate-id="${candidateId}"] .match-card__footer`);
@@ -289,14 +286,12 @@ async function handlePassToNextFilter(candidateId) {
 
     if (!confirmed) return;
 
-    // Call n8n webhook for congratulations email
-    await notifyPassedFilter({
-        candidateEmail: candidate.email || '',
-        candidateName: name,
-        offerTitle: currentOfferTitle,
-        companyName,
-        score,
-    });
+    // Notify candidate via backend (n8n → Gmail)
+    try {
+        await notifyCandidate(currentOfferId, candidateId, 'approved');
+    } catch (err) {
+        console.warn('Notification failed:', err.message);
+    }
 
     showToast(`${name} has been passed to the next filter. Notification sent!`, 'success');
 

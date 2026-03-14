@@ -73,8 +73,7 @@ export async function initDashboard() {
             const offer = recent.find(o => String(o.id) === String(rowId));
             if (!offer) return;
 
-            const actions = `<a href="#/offers/edit/${offer.id}" class="btn btn--primary">Edit</a>`;
-            showOfferModal(offer, actions);
+            showOfferModal(offer);
         });
     });
 }

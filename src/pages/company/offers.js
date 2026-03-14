@@ -148,8 +148,7 @@ async function handleAction(e) {
             const cardId = card.dataset.id;
             const offer = allOffers.find(o => String(o.id) === String(cardId));
             if (offer) {
-                const actionsHtml = isActiveOffer(offer) ? `<a href="#/offers/edit/${offer.id}" class="btn btn--primary" style="text-decoration: none;">Edit</a>` : '';
-                showOfferModal(offer, actionsHtml);
+                showOfferModal(offer);
             }
         }
         return;

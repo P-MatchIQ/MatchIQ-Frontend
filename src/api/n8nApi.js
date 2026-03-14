@@ -1,55 +1,20 @@
-// ── n8n Webhook Integration ─────────────────────────────────────
-// Sends webhook notifications to n8n for automated email workflows.
+// ── Candidate Notification API ──────────────────────────────────
+// Calls the backend endpoint that triggers n8n + Gmail email flows.
 
-// TODO: Replace with your actual n8n webhook URLs
-const N8N_WEBHOOKS = {
-    testSent: 'https://your-n8n-instance.com/webhook/test-sent',
-    passedFilter: 'https://your-n8n-instance.com/webhook/passed-filter',
-};
+import { apiFetch } from "./apiClient.js";
 
 /**
- * Notify n8n that a test was sent to a candidate.
- * n8n should trigger an email to the candidate.
+ * Notify a candidate about their status in a job offer process.
+ * The backend sends the data to n8n which triggers Gmail automatically.
+ *
+ * @param {string} offerId     – Job offer UUID
+ * @param {string} candidateId – Candidate UUID
+ * @param {"technical_test"|"approved"|"rejected"} status
+ * @returns {Promise<{success: boolean, message: string, notified: boolean, candidate_email: string}>}
  */
-export async function notifyTestSent({ candidateEmail, candidateName, offerTitle, companyName }) {
-    try {
-        await fetch(N8N_WEBHOOKS.testSent, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                event: 'test_sent',
-                candidate_email: candidateEmail,
-                candidate_name: candidateName,
-                offer_title: offerTitle,
-                company_name: companyName,
-                timestamp: new Date().toISOString(),
-            }),
-        });
-    } catch (err) {
-        console.warn('n8n webhook (test_sent) failed:', err.message);
-    }
-}
-
-/**
- * Notify n8n that a candidate passed the filter.
- * n8n should trigger a congratulations email.
- */
-export async function notifyPassedFilter({ candidateEmail, candidateName, offerTitle, companyName, score }) {
-    try {
-        await fetch(N8N_WEBHOOKS.passedFilter, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                event: 'passed_filter',
-                candidate_email: candidateEmail,
-                candidate_name: candidateName,
-                offer_title: offerTitle,
-                company_name: companyName,
-                score,
-                timestamp: new Date().toISOString(),
-            }),
-        });
-    } catch (err) {
-        console.warn('n8n webhook (passed_filter) failed:', err.message);
-    }
+export async function notifyCandidate(offerId, candidateId, status) {
+  return apiFetch(`/matching/job-offers/${offerId}/candidates/${candidateId}/notify`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
 }
