@@ -5,8 +5,8 @@ const form        = document.querySelector("form.card");
 const emailInput  = document.getElementById("email");
 const passInput   = document.getElementById("password");
 const confirmInput= document.getElementById("confirmPassword");
-const submitBtn   = document.querySelector(".btn--primary");
-const errorBanner = document.getElementById("error-banner");
+const submitBtn     = document.getElementById("submitBtn");
+const errorBanner   = document.getElementById("error-banner");
 const successBanner = document.getElementById("success-banner");
 
 // Utilidades UI 
@@ -29,7 +29,7 @@ function clearBanners() {
 
 function setLoading(isLoading) {
   submitBtn.disabled = isLoading;
-  submitBtn.textContent = isLoading ? "Creating account…" : "Create Talent Account →";
+  submitBtn.classList.toggle("is-loading", isLoading);
 }
 
 // Submit handler
@@ -46,11 +46,11 @@ form.addEventListener("submit", async (e) => {
   try {
     await registerCandidate({ email, password, confirmPassword });
 
-    showSuccess("Account created! Redirecting to your dashboard…");
+    showSuccess("Account created! Redirecting to sign in…");
 
-    // Redirige al dashboard del candidato tras 1.5s
+    // Redirige al login tras 1.5s (el token se guarda al loguearse)
     setTimeout(() => {
-      window.location.href = "./candidate/dashboard.html";
+      window.location.href = "./login.html";
     }, 1500);
 
   } catch (error) {

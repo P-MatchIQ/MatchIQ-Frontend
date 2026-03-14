@@ -1,305 +1,72 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>MatchIQ · Dashboard Candidato</title>
-  <link rel="stylesheet" href="../../src/styles/candidate-dashboard.css" />
-</head>
-<body>
-  <div class="layout">
-
-    <!-- ── SIDEBAR ── -->
-    <aside class="sidebar">
-      <div class="brand">
-        <img class="brand__logo" src="../../src/assets/iconoMatchIQ-Imag.png" alt="MatchIQ logo" />
-        <div>
-          <h1 class="brand__title">MatchIQ</h1>
-          <p class="brand__subtitle">Smart Connections for Developers</p>
-        </div>
-      </div>
-
-      <nav class="menu">
-        <a class="menu__item menu__item--active" href="./dashboard.html">
-          <span class="menu__icon">▣</span>
-          <span>Dashboard</span>
-        </a>
-        <button class="menu__item" id="editProfileBtn" type="button">
-          <span class="menu__icon">✎</span>
-          <span>Editar perfil</span>
-        </button>
-        <a class="menu__item" href="#offersSection">
-          <span class="menu__icon">≣</span>
-          <span>Ofertas compatibles</span>
-        </a>
-      </nav>
-
-      <div class="sidebar__footer">
-        <p class="sidebar__label">ESTADO DEL PERFIL</p>
-        <div class="status-card">
-          <strong id="profileStatusText">Cargando...</strong>
-          <span id="availabilityText">Verificando...</span>
-        </div>
-        <button class="menu__item menu__item--danger sidebar__logout" id="logoutBtn" type="button">
-          <span class="menu__icon">⇠</span>
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- ── MAIN ── -->
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h2 class="page-title">Dashboard</h2>
-          <p class="page-subtitle">Revisa tu perfil y explora ofertas compatibles con tus skills.</p>
-        </div>
-        <div class="topbar__actions">
-          <span class="welcome" id="welcomeText">Bienvenido</span>
-        </div>
-      </header>
-
-      <!-- Stats -->
-      <section class="summary-grid">
-        <article class="summary-card">
-          <p class="summary-card__label">OFERTAS DISPONIBLES</p>
-          <h3 class="summary-card__value" id="totalOffersValue">—</h3>
-        </article>
-        <article class="summary-card">
-          <p class="summary-card__label">MEJOR MATCH</p>
-          <h3 class="summary-card__value" id="bestMatchValue">—</h3>
-        </article>
-        <article class="summary-card summary-card--highlight">
-          <p class="summary-card__label">PERFIL COMPLETADO</p>
-          <h3 class="summary-card__value" id="profileCompletenessValue">0%</h3>
-        </article>
-      </section>
-
-      <!-- Perfil -->
-      <section class="panel profile-panel">
-        <div class="panel__head">
-          <div>
-            <h3>Tu perfil</h3>
-            <p>Información usada para generar tus matches.</p>
-          </div>
-        </div>
-
-        <div class="alert" id="dashboardAlert" hidden role="alert"></div>
-
-        <div class="profile-grid">
-          <div class="profile-item">
-            <span class="profile-item__label">Categorías</span>
-            <div class="tags" id="categoriesTags"></div>
-          </div>
-          <div class="profile-item">
-            <span class="profile-item__label">Skills</span>
-            <div class="tags" id="skillsTags"></div>
-          </div>
-          <div class="profile-item">
-            <span class="profile-item__label">Experiencia</span>
-            <strong id="experienceValue">-</strong>
-          </div>
-          <div class="profile-item">
-            <span class="profile-item__label">Inglés</span>
-            <strong id="englishValue">-</strong>
-          </div>
-          <div class="profile-item">
-            <span class="profile-item__label">Seniority</span>
-            <strong id="seniorityValue">-</strong>
-          </div>
-        </div>
-      </section>
-
-      <!-- Ofertas -->
-      <section class="panel offers-panel" id="offersSection">
-        <div class="panel__head">
-          <div>
-            <h3>Ofertas compatibles</h3>
-            <p>Próximamente — sistema de matching en desarrollo.</p>
-          </div>
-        </div>
-        <div class="empty-state" id="offersEmpty">
-          Aún no hay ofertas disponibles. Completa tu perfil para empezar a recibir matches.
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- ── MODAL EDITAR PERFIL ── -->
-  <dialog class="profile-modal" id="profileModal">
-    <form class="profile-form" id="profileForm" method="dialog">
-      <div class="offer-modal__head">
-        <div>
-          <h3>Editar perfil</h3>
-          <p>Actualiza tu información para mejorar tus matches.</p>
-        </div>
-        <button class="modal-close" id="closeProfileModalBtn" type="button">✕</button>
-      </div>
-
-      <div class="form-grid form-grid--single">
-
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-          <div class="field">
-            <label for="firstNameInput">Nombres</label>
-            <input id="firstNameInput" type="text" placeholder="Juan" />
-          </div>
-          <div class="field">
-            <label for="lastNameInput">Apellidos</label>
-            <input id="lastNameInput" type="text" placeholder="Pérez" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Categorías</label>
-          <small>Selecciona una o más categorías.</small>
-          <div class="picker-grid" id="categoriesPicker"></div>
-        </div>
-
-        <div class="field">
-          <label>Skills</label>
-          <small>Los skills disponibles dependen de las categorías seleccionadas.</small>
-          <div class="picker-toolbar">
-            <span class="picker-counter" id="skillsCounter">0 skills seleccionados</span>
-            <button class="mini-link" id="clearSkillsBtn" type="button">Limpiar skills</button>
-          </div>
-          <div class="picker-grid picker-grid--skills" id="skillsPicker"></div>
-        </div>
-
-        <div class="field-group">
-          <div class="field">
-            <label for="experienceInput">Años de experiencia</label>
-            <input id="experienceInput" type="number" min="0" placeholder="3" />
-          </div>
-          <div class="field">
-            <label for="englishInput">Nivel de inglés</label>
-            <select id="englishInput">
-              <option value="">Selecciona</option>
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-              <option value="C2">C2</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="seniorityInput">Seniority</label>
-            <select id="seniorityInput">
-              <option value="">Selecciona</option>
-              <option value="junior">Junior</option>
-              <option value="mid">Mid</option>
-              <option value="senior">Senior</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert" id="profileFormAlert" hidden role="alert"></div>
-
-      <div class="form-actions">
-        <button class="btn btn--ghost" id="cancelProfileBtn" type="button">Cancelar</button>
-        <button class="btn btn--primary" id="saveProfileBtn" type="submit">Guardar perfil</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- ── ONBOARDING OVERLAY ── -->
-  <div class="onboarding-overlay onboarding--hidden" id="onboardingOverlay">
-    <div class="onboarding-card">
-
-      <div class="onboarding-header">
-        <img src="../../src/assets/iconoMatchIQ-Imag.png" alt="MatchIQ" class="onboarding-logo" />
-        <h2>¡Bienvenido a MatchIQ!</h2>
-        <p>Completa tu perfil para comenzar a recibir ofertas compatibles con tus skills.</p>
-      </div>
-
-      <!-- Barra de progreso -->
-      <div class="ob-progress">
-        <div class="ob-progress__bar" id="ob-progressBar" style="width: 33%"></div>
-      </div>
-
-      <div class="alert" id="onboardingAlert" hidden role="alert"></div>
-
-      <!-- Paso 1: Datos personales -->
-      <div id="ob-step-1" class="ob-step">
-        <div class="ob-step__header">
-          <span class="ob-step__number">Paso 1 de 3 — Información personal</span>
-          <h3>Cuéntanos sobre ti</h3>
-        </div>
-        <div class="field-group" style="grid-template-columns: 1fr 1fr;">
-          <div class="field">
-            <label for="ob_firstName">Nombres</label>
-            <input id="ob_firstName" type="text" placeholder="Juan" />
-          </div>
-          <div class="field">
-            <label for="ob_lastName">Apellidos</label>
-            <input id="ob_lastName" type="text" placeholder="Pérez" />
-          </div>
-        </div>
-        <div class="field-group" style="margin-top: 16px;">
-          <div class="field">
-            <label for="ob_experience">Años de experiencia</label>
-            <input id="ob_experience" type="number" min="0" placeholder="3" />
-          </div>
-          <div class="field">
-            <label for="ob_english">Nivel de inglés</label>
-            <select id="ob_english">
-              <option value="">Selecciona</option>
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-              <option value="C2">C2</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="ob_seniority">Seniority</label>
-            <select id="ob_seniority">
-              <option value="">Selecciona</option>
-              <option value="junior">Junior</option>
-              <option value="mid">Mid</option>
-              <option value="senior">Senior</option>
-            </select>
-          </div>
-        </div>
-        <div class="ob-step__actions">
-          <button class="btn btn--primary" id="ob_nextStep1" type="button">Siguiente →</button>
-        </div>
-      </div>
-
-      <!-- Paso 2: Categorías -->
-      <div id="ob-step-2" class="ob-step ob-step--hidden">
-        <div class="ob-step__header">
-          <span class="ob-step__number">Paso 2 de 3 — Especialización</span>
-          <h3>¿En qué áreas te especializas?</h3>
-        </div>
-        <div class="picker-grid" id="ob-categoriesPicker"></div>
-        <div class="ob-step__actions">
-          <button class="btn btn--primary" id="ob_nextStep2" type="button">Siguiente →</button>
-        </div>
-      </div>
-
-      <!-- Paso 3: Skills -->
-      <div id="ob-step-3" class="ob-step ob-step--hidden">
-        <div class="ob-step__header">
-          <span class="ob-step__number">Paso 3 de 3 — Skills</span>
-          <h3>¿Cuáles son tus skills?</h3>
-        </div>
-        <div class="picker-toolbar">
-          <span class="picker-counter" id="ob-skillsCounter">0 skills seleccionados</span>
-          <button class="mini-link" id="ob-clearSkillsBtn" type="button">Limpiar</button>
-        </div>
-        <div class="picker-grid picker-grid--skills" id="ob-skillsPicker"></div>
-        <div class="ob-step__actions">
-          <button class="btn btn--primary" id="ob_saveBtn" type="button">Completar perfil ✓</button>
-        </div>
-      </div>
-
+<!-- ─── Dashboard Fragment ─── -->
+<header class="main__header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="muted">Review your profile and explore offers matching your skills.</p>
     </div>
-  </div>
+    <div>
+        <span class="welcome" id="welcomeText">Welcome</span>
+    </div>
+</header>
 
-  <script type="module" src="../../src/pages/candidate/dashboard.js"></script>
-</body>
-</html>
+<!-- Stats -->
+<section class="summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+    <article class="summary-card">
+        <p class="summary-card__label">PROFILE COMPLETED</p>
+        <h3 class="summary-card__value" id="profileCompletenessValue">0%</h3>
+    </article>
+    <article class="summary-card">
+        <p class="summary-card__label">PENDING TESTS</p>
+        <h3 class="summary-card__value" id="pendingTestsValue"><span class="skeleton skeleton--text"></span></h3>
+    </article>
+    <article class="summary-card summary-card--highlight">
+        <p class="summary-card__label">COMPLETED TESTS</p>
+        <h3 class="summary-card__value" id="completedTestsValue"><span class="skeleton skeleton--text"></span></h3>
+    </article>
+</section>
+
+<div class="alert" id="dashboardAlert" hidden role="alert"></div>
+
+<!-- Pending Tests -->
+<section class="panel" id="pendingTestsSection">
+    <div class="panel__head">
+        <div>
+            <h3>Pending Tests</h3>
+            <p>Tests sent by companies that you haven't completed yet.</p>
+        </div>
+        <a class="btn btn--ghost btn--sm" href="#/tests">View all →</a>
+    </div>
+    <div id="pendingTestsContainer">
+        <div class="inline-loader" id="pendingTestsLoader">
+            <div class="inline-loader__spinner"></div>
+            <span>Loading tests…</span>
+        </div>
+        <div class="empty-state" id="pendingTestsEmpty" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 24 24" style="opacity:0.3; margin-bottom: 8px;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <p>No pending tests. You're all caught up!</p>
+        </div>
+        <div class="test-cards" id="pendingTestCards" style="display: none;"></div>
+    </div>
+</section>
+
+<!-- Recent Activity -->
+<section class="panel" id="activitySection">
+    <div class="panel__head">
+        <div>
+            <h3>Recent Activity</h3>
+            <p>Latest events in your account.</p>
+        </div>
+    </div>
+    <div id="activityContainer">
+        <div class="inline-loader" id="activityLoader">
+            <div class="inline-loader__spinner"></div>
+            <span>Loading activity…</span>
+        </div>
+        <div class="empty-state" id="activityEmpty" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 24 24" style="opacity:0.3; margin-bottom: 8px;"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            <p>No recent activity yet.</p>
+        </div>
+        <div class="activity-feed" id="activityFeed" style="display: none;"></div>
+    </div>
+</section>
+

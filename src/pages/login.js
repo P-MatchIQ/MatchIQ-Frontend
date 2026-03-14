@@ -32,21 +32,21 @@ function redirectAfterLogin(user) {
 
   if (role === "admin") window.location.href = "./admin/dashboard.html";
   else if (role === "company") window.location.href = "./company/index.html";
-  else window.location.href = "./candidate/dashboard.html";
+  else window.location.href = "./candidate/index.html";
 }
 
 async function redirectIfAuthenticated() {
-  // Si ya hay sesión mock, no mostramos login: redirigimos.
+  // If there's already an active session, skip login and redirect.
   try {
     const me = await authMe();
     if (me?.authenticated && me.user) redirectAfterLogin(me.user);
   } catch {
-    // si falla, dejamos que se muestre el login
+    // If authMe fails, show login form
   }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // ELEMENTOS LOGIN
+  // LOGIN ELEMENTS
   const loginForm = $("#loginForm");
   const emailInput = $("#email");
   const passwordInput = $("#password");
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loginSuccessHint = $("#loginSuccessHint");
   const goRecoverBtn = $("#goRecoverBtn");
 
-  // ELEMENTOS RECOVER
+  // RECOVER ELEMENTS
   const recoverForm = $("#recoverForm");
   const recoverEmailInput = $("#recoverEmail");
   const recoverEmailError = $("#recoverEmailError");
@@ -67,13 +67,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const recoverSuccessHint = $("#recoverSuccessHint");
   const backToLoginBtn = $("#backToLoginBtn");
 
-  // Si tus IDs no existen, te aviso en consola (esto te ayuda a depurar rápido)
+  // If required IDs are missing, log a warning (helps debug quickly)
   if (!loginForm || !emailInput || !passwordInput) {
     console.warn("[login.js] Missing required login elements. Check IDs in login.html");
     return;
   }
 
-  // Redirección empresarial: si ya hay sesión, no se ve el login
+  // Redirect if already authenticated
   await redirectIfAuthenticated();
 
   function clearErrors() {

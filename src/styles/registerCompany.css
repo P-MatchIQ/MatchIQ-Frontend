@@ -1,13 +1,16 @@
 
 :root {
-  --bg-900: #021024;
-  --bg-800: #052659;
+  --bg-900: #0f2537;
+  --bg-800: #1a3a5c;
 
-  --blue-500: #5483B3;
+  --blue-500: #4a7fa8;
 
-  --text-900: #021024;
-  --text-700: rgba(2, 16, 36, 0.72);
-  --text-600: rgba(2, 16, 36, 0.55);
+  --emerald: #34d399;
+  --emerald-dark: #10b981;
+
+  --text-900: #0f2537;
+  --text-700: rgba(15, 37, 55, 0.72);
+  --text-600: rgba(15, 37, 55, 0.55);
 
   --border: rgba(125, 160, 202, 0.35);
   --card: rgba(255, 255, 255, 0.9);
@@ -68,6 +71,20 @@ body {
   object-fit: contain;
 }
 
+.auth__title {
+  font-size: 28px;
+  margin: 16px 0 8px;
+  letter-spacing: -0.5px;
+  color: var(--bg-800);
+}
+
+.auth__subtitle {
+  color: var(--text-700);
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
  /**Banners */
 .banner { padding: .75rem 1rem; border-radius: 6px; font-size: .9rem; }
 .banner--error   { background: #fee2e2; color: #b91c1c; }
@@ -96,6 +113,27 @@ body {
   box-shadow:
     0 40px 100px rgba(2, 16, 36, 0.18),
     0 15px 30px rgba(2, 16, 36, 0.1);
+}
+
+.card__header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(125,160,202,0.2);
+}
+
+.card__header .auth__title {
+  font-size: 24px;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+  color: var(--bg-800);
+}
+
+.card__header .auth__subtitle {
+  color: var(--text-700);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 /* FORM STRUCTURE */
@@ -195,8 +233,8 @@ input:focus {
 .btn--primary {
   background: linear-gradient(
     180deg,
-    var(--bg-800),
-    var(--bg-900)
+    var(--emerald),
+    var(--emerald-dark)
   );
   color: #ffffff;
 }
@@ -206,6 +244,24 @@ input:focus {
   filter: brightness(1.08);
   box-shadow: 0 10px 25px rgba(2, 16, 36, 0.25);
 }
+
+/* Button Loading State */
+.btn { position: relative; }
+.btn .btn__spinner { display: none; }
+.btn.is-loading .btn__text { visibility: hidden; }
+.btn.is-loading .btn__spinner {
+  display: block;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px; height: 22px;
+  border: 3px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+.btn.is-loading { pointer-events: none; opacity: 0.75; }
+@keyframes btn-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
 /* RESPONSIVE */
 @media (max-width: 700px) {

@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const email = emailInput.value.trim();
 
         if (!email) {
-            emailError.textContent = "El email es obligatorio.";
+            emailError.textContent = "Email is required.";
             return;
         }
 

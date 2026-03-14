@@ -26,6 +26,10 @@ export async function initOfferCreate(params = {}) {
 
     const isEdit = !!params.id;
 
+    // Show loader while data loads
+    const form = document.getElementById('offer-form');
+    if (form) form.style.opacity = '0';
+
     // Títulos
     const titleEl = document.getElementById('form-title');
     const subtitleEl = document.getElementById('form-subtitle');
@@ -67,9 +71,13 @@ export async function initOfferCreate(params = {}) {
         }
     }
 
-    // Submit handler
-    const form = document.getElementById('offer-form');
+    // Show form after data loads
+    if (form) {
+        form.style.opacity = '1';
+        form.style.transition = 'opacity 0.3s ease';
+    }
 
+    // Submit handler
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -154,7 +162,7 @@ function renderCategoryOptions() {
         const opt = document.createElement('div');
         opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
         opt.dataset.id = cat.id;
-        opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(cat.name)}</span>`;
+        opt.innerHTML = `<span class="multiselect__check"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span>${esc(cat.name)}</span>`;
 
         opt.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -213,7 +221,7 @@ async function renderSkillOptions() {
             const opt = document.createElement('div');
             opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
             opt.dataset.id = skill.id;
-            opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(skill.name)}</span>`;
+            opt.innerHTML = `<span class="multiselect__check"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span>${esc(skill.name)}</span>`;
 
             opt.addEventListener('click', (e) => {
                 e.stopPropagation();

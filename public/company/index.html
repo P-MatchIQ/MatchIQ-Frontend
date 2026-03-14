@@ -63,6 +63,16 @@
                         </span>
                         <span>Candidates</span>
                     </a>
+
+                    <a class="nav__item" href="#/profile" data-route="profile">
+                        <span class="nav__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                            </svg>
+                        </span>
+                        <span>Profile</span>
+                    </a>
                 </nav>
             </div>
 
@@ -130,6 +140,90 @@
             <div class="modal__actions" id="offer-modal-actions">
                 <!-- Actions injected dynamically -->
             </div>
+        </div>
+    </div>
+
+    <!-- Offer Test Preview Modal -->
+    <dialog class="candidate-modal test-preview-modal" id="offerTestPreviewModal">
+        <div class="candidate-modal__content">
+            <div class="candidate-modal__head">
+                <div>
+                    <h3 id="offer-preview-test-title">Test Preview</h3>
+                    <p class="muted" id="offer-preview-test-meta"></p>
+                </div>
+                <button class="modal-close-btn" id="closeOfferTestPreview" type="button"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+            </div>
+
+            <div id="offer-preview-questions-container">
+                <!-- Questions rendered by JS -->
+            </div>
+
+            <div class="test-preview__actions">
+                <button class="btn btn--ghost" id="offerPreviewCloseBtn">Close</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- ── COMPANY ONBOARDING OVERLAY ── -->
+    <div class="onboarding-overlay onboarding--hidden" id="companyOnboarding">
+        <div class="onboarding-card">
+
+            <div class="onboarding-header">
+                <img src="../../src/assets/iconoMatchIQ.png" alt="MatchIQ" class="onboarding-logo" />
+                <h2>Welcome to MatchIQ!</h2>
+                <p>Set up your company profile to start posting offers and connecting with top talent.</p>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="ob-progress">
+                <div class="ob-progress__bar" id="co-progressBar" style="width: 50%"></div>
+            </div>
+
+            <div class="ob-alert" id="coOnboardingAlert" hidden role="alert"></div>
+
+            <!-- Step 1: Company identity -->
+            <div id="co-step-1" class="ob-step">
+                <div class="ob-step__header">
+                    <span class="ob-step__number">Step 1 of 2 — Company Identity</span>
+                    <h3>Tell us about your company</h3>
+                </div>
+                <div class="ob-form-grid">
+                    <div class="ob-field">
+                        <label for="co_companyName">Company Name *</label>
+                        <input class="form-input" id="co_companyName" type="text" placeholder="E.g.: Acme Corp" />
+                    </div>
+                    <div class="ob-field">
+                        <label for="co_location">Location</label>
+                        <input class="form-input" id="co_location" type="text" placeholder="E.g.: Bogotá, Colombia" />
+                    </div>
+                </div>
+                <div class="ob-step__actions">
+                    <button class="btn btn--primary" id="co_nextStep1" type="button">Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Details -->
+            <div id="co-step-2" class="ob-step ob-step--hidden">
+                <div class="ob-step__header">
+                    <span class="ob-step__number">Step 2 of 2 — Additional Details</span>
+                    <h3>A few more details</h3>
+                </div>
+                <div class="ob-form-grid">
+                    <div class="ob-field">
+                        <label for="co_website">Website</label>
+                        <input class="form-input" id="co_website" type="url" placeholder="https://example.com" />
+                    </div>
+                    <div class="ob-field">
+                        <label for="co_description">Company Description</label>
+                        <textarea class="form-textarea" id="co_description" rows="4" placeholder="What does your company do?"></textarea>
+                    </div>
+                </div>
+                <div class="ob-step__actions">
+                    <button class="btn btn--ghost" id="co_backStep2" type="button">← Back</button>
+                    <button class="btn btn--primary" id="co_saveBtn" type="button">Complete Profile</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
