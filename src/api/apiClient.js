@@ -2,7 +2,7 @@
     window.location.href = window.location.href.replace("127.0.0.1", "localhost");
   }
 
-  const DEFAULT_BASE_URL = window.location.hostname === "localhost"
+  export const DEFAULT_BASE_URL = window.location.hostname === "localhost"
     ? "http://localhost:3005"
     : "https://matchiq-backend-production.up.railway.app";
 

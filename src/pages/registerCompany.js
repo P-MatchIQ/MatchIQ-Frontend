@@ -1,6 +1,6 @@
 import { registerCompany } from "../api/authApi.js";
+import { DEFAULT_BASE_URL } from "../api/apiClient.js";
 
-// Referencias al DOM
 const form          = document.querySelector("form.card");
 const emailInput    = document.getElementById("email");
 const passInput     = document.getElementById("password");
@@ -9,7 +9,6 @@ const submitBtn     = document.getElementById("submitBtn");
 const errorBanner   = document.getElementById("error-banner");
 const successBanner = document.getElementById("success-banner");
 
-// Utilidades UI 
 function showError(message) {
   errorBanner.textContent = message;
   errorBanner.hidden = false;
@@ -32,7 +31,6 @@ function setLoading(isLoading) {
   submitBtn.classList.toggle("is-loading", isLoading);
 }
 
-// Submit handler
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   clearBanners();
@@ -44,18 +42,19 @@ form.addEventListener("submit", async (e) => {
   setLoading(true);
 
   try {
-    await registerCompany({ email, password, confirmPassword });
+    const result = await registerCompany({ email, password, confirmPassword });
 
-    showSuccess("Corporate account created! Redirecting to sign in…");
+    showSuccess("¡Cuenta creada! Revisa tu correo para verificar tu cuenta.");
 
-    // Redirige al login tras 1.5s (el token se guarda al loguearse)
     setTimeout(() => {
-      window.location.href = "./login.html";
+      window.location.href = `./verifyEmail.html?email=${encodeURIComponent(result.email)}`;
     }, 1500);
 
   } catch (error) {
-    showError(error.message || "Something went wrong. Please try again.");
+    showError(error.message || "Algo salió mal. Intenta de nuevo.");
   } finally {
     setLoading(false);
   }
 });
+
+document.getElementById("googleBtn").href = `${DEFAULT_BASE_URL}/auth/google?role=company`;

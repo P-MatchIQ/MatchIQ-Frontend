@@ -1,13 +1,13 @@
 import { apiFetch } from "./apiClient.js";
+
 const SESSION_KEY = "matchiq_session";
 
-// ── Sesión de usuario (solo datos de UI: email, rol) ─────────────
-// El token JWT lo maneja el backend con httpOnly cookie.
 function saveSession(user, remember = true) {
   const storage = remember ? localStorage : sessionStorage;
   storage.setItem(SESSION_KEY, JSON.stringify(user));
   (remember ? sessionStorage : localStorage).removeItem(SESSION_KEY);
 }
+
 function loadSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
@@ -16,27 +16,32 @@ function loadSession() {
     return null;
   }
 }
+
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY);
 }
+
 export function getSession() {
   return loadSession();
 }
+
 export async function registerCandidate({ email, password, confirmPassword }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
+
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("All fields are required.");
+    throw new Error("Todos los campos son obligatorios.");
   }
   if (normalizedPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
   }
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Passwords do not match.");
+    throw new Error("Las contraseñas no coinciden.");
   }
-  await apiFetch("/auth/register/candidate", {
+
+  const result = await apiFetch("/auth/register/candidate", {
     method: "POST",
     body: JSON.stringify({
       email: normalizedEmail,
@@ -44,24 +49,26 @@ export async function registerCandidate({ email, password, confirmPassword }) {
       confirmPassword: normalizedConfirm,
     }),
   });
-  const user = { email: normalizedEmail, role: "candidate" };
-  saveSession(user, true);
-  return { user };
+
+  return { email: normalizedEmail, requiresVerification: result.requiresVerification };
 }
+
 export async function registerCompany({ email, password, confirmPassword }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
   const normalizedConfirm = String(confirmPassword ?? "").trim();
+
   if (!normalizedEmail || !normalizedPassword || !normalizedConfirm) {
-    throw new Error("All fields are required.");
+    throw new Error("Todos los campos son obligatorios.");
   }
   if (normalizedPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+    throw new Error("La contraseña debe tener mínimo 6 caracteres.");
   }
   if (normalizedPassword !== normalizedConfirm) {
-    throw new Error("Passwords do not match.");
+    throw new Error("Las contraseñas no coinciden.");
   }
-  await apiFetch("/auth/register/company", {
+
+  const result = await apiFetch("/auth/register/company", {
     method: "POST",
     body: JSON.stringify({
       email: normalizedEmail,
@@ -69,13 +76,14 @@ export async function registerCompany({ email, password, confirmPassword }) {
       confirmPassword: normalizedConfirm,
     }),
   });
-  const user = { email: normalizedEmail, role: "company" };
-  saveSession(user, true);
-  return { user };
+
+  return { email: normalizedEmail, requiresVerification: result.requiresVerification };
 }
+
 export async function authLogin({ email, password, remember }) {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   const normalizedPassword = String(password ?? "").trim();
+
   const response = await apiFetch("/auth/login", {
     method: "POST",
     body: JSON.stringify({
@@ -84,11 +92,11 @@ export async function authLogin({ email, password, remember }) {
       rememberMe: !!remember,
     }),
   });
-  // The backend sets the httpOnly cookie automatically.
-  // We only store user data for the UI.
+
   saveSession(response.user, !!remember);
   return { user: response.user };
 }
+
 export async function authMe() {
   try {
     const response = await apiFetch("/auth/me", { method: "GET" });
@@ -103,11 +111,11 @@ export async function authMe() {
     return { authenticated: false, user: null };
   }
 }
+
 export async function authLogout() {
   try {
-    // The backend clears its httpOnly cookie at this endpoint.
     await apiFetch("/auth/logout", { method: "POST" });
-  } catch { }
+  } catch {}
   clearSession();
   return { ok: true };
 }
@@ -123,5 +131,19 @@ export async function apiResetPassword({ token, newPassword, confirmPassword }) 
   return apiFetch("/auth/resetPassword", {
     method: "POST",
     body: JSON.stringify({ token, newPassword, confirmPassword }),
+  });
+}
+
+export async function apiVerifyEmail({ email, code }) {
+  return apiFetch("/auth/verifyEmail", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export async function apiResendCode({ email }) {
+  return apiFetch("/auth/resendVerificationCode", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
