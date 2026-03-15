@@ -11,7 +11,7 @@ const STATUS_PILLS = {
     active: '<span class="pill pill--active">Active</span>',
     in_process: '<span class="pill pill--in-process">In Process</span>',
     closed: '<span class="pill pill--closed">Closed</span>',
-    cancelled: '<span class="pill pill--cancelled">Cancelled</span>',
+    cancelled: '<span class="pill pill--closed">Closed</span>',
 };
 
 function isActiveOffer(offer) {
@@ -22,7 +22,12 @@ function isActiveOffer(offer) {
  * Inicializa la vista del Dashboard.
  */
 export async function initDashboard() {
+    const container = document.getElementById('app') || document.querySelector('.main');
+
+    // Show loader
+    const loader = container?.querySelector('.page-loader');
     const offers = await getOffers();
+    if (loader) loader.remove();
 
     const active = offers.filter(o => isActiveOffer(o)).length;
     const closed = offers.filter(o => o.status === 'closed').length;
@@ -68,8 +73,7 @@ export async function initDashboard() {
             const offer = recent.find(o => String(o.id) === String(rowId));
             if (!offer) return;
 
-            const actions = `<a href="#/offers/edit/${offer.id}" class="btn btn--primary">Edit</a>`;
-            showOfferModal(offer, actions);
+            showOfferModal(offer);
         });
     });
 }

@@ -1,7 +1,7 @@
 // ── Offers API ──────────────────────────────────────────────────────
 // CRUD de ofertas laborales.
 
-import { fetchApi } from './apiClient.js';
+import { apiFetch } from './apiClient.js';
 
 /* ── API Pública ───────────────────────────────────────────────── */
 
@@ -10,7 +10,7 @@ import { fetchApi } from './apiClient.js';
  * @returns {Promise<Array>}
  */
 export async function getOffers() {
-    return fetchApi('/offers');
+    return apiFetch('/offers');
 }
 
 /**
@@ -19,7 +19,7 @@ export async function getOffers() {
  * @returns {Promise<object|null>}
  */
 export async function getOfferById(id) {
-    return fetchApi(`/offers/${id}`).catch(() => null);
+    return apiFetch(`/offers/${id}`).catch(() => null);
 }
 
 /**
@@ -28,7 +28,7 @@ export async function getOfferById(id) {
  * @returns {Promise<object>} - Oferta creada
  */
 export async function createOffer(data) {
-    return fetchApi('/offers', { method: 'POST', body: JSON.stringify(data) });
+    return apiFetch('/offers', { method: 'POST', body: JSON.stringify(data) });
 }
 
 /**
@@ -38,7 +38,7 @@ export async function createOffer(data) {
  * @returns {Promise<object>}
  */
 export async function updateOffer(id, data) {
-    return fetchApi(`/offers/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    return apiFetch(`/offers/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
 /**
@@ -47,7 +47,7 @@ export async function updateOffer(id, data) {
  * @returns {Promise<object>}
  */
 export async function closeOffer(id) {
-    return fetchApi(`/offers/${id}/status`, {
+    return apiFetch(`/offers/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'closed' })
     });
@@ -59,7 +59,7 @@ export async function closeOffer(id) {
  * @returns {Promise<object>}
  */
 export async function cancelOffer(id) {
-    return fetchApi(`/offers/${id}/force-cancel`, {
+    return apiFetch(`/offers/${id}/force-cancel`, {
         method: 'PATCH'
     });
 }

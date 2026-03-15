@@ -26,6 +26,10 @@ export async function initOfferCreate(params = {}) {
 
     const isEdit = !!params.id;
 
+    // Show loader while data loads
+    const form = document.getElementById('offer-form');
+    if (form) form.style.opacity = '0';
+
     // Títulos
     const titleEl = document.getElementById('form-title');
     const subtitleEl = document.getElementById('form-subtitle');
@@ -34,7 +38,8 @@ export async function initOfferCreate(params = {}) {
     if (isEdit) {
         if (titleEl) titleEl.textContent = 'Edit Offer';
         if (subtitleEl) subtitleEl.textContent = 'Modify the job offer data.';
-        if (submitBtn) submitBtn.textContent = 'Update Offer';
+        const btnText = submitBtn?.querySelector('.btn__text');
+        if (btnText) btnText.textContent = 'Update Offer';
     }
 
     // Cargar categorías del backend
@@ -66,11 +71,20 @@ export async function initOfferCreate(params = {}) {
         }
     }
 
+    // Show form after data loads
+    if (form) {
+        form.style.opacity = '1';
+        form.style.transition = 'opacity 0.3s ease';
+    }
+
     // Submit handler
-    const form = document.getElementById('offer-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+
+        // Prevent double-click
+        submitBtn.classList.add('is-loading');
+        submitBtn.disabled = true;
 
         const data = collectFormData();
         console.log(data);
@@ -86,6 +100,9 @@ export async function initOfferCreate(params = {}) {
             navigateTo('offers');
         } catch (err) {
             showToast(err.message || 'Error saving offer.', 'error');
+        } finally {
+            submitBtn.classList.remove('is-loading');
+            submitBtn.disabled = false;
         }
     });
 }
@@ -145,7 +162,7 @@ function renderCategoryOptions() {
         const opt = document.createElement('div');
         opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
         opt.dataset.id = cat.id;
-        opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(cat.name)}</span>`;
+        opt.innerHTML = `<span class="multiselect__check"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span>${esc(cat.name)}</span>`;
 
         opt.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -204,7 +221,7 @@ async function renderSkillOptions() {
             const opt = document.createElement('div');
             opt.className = `multiselect__option${isSelected ? ' is-selected' : ''}`;
             opt.dataset.id = skill.id;
-            opt.innerHTML = `<span class="multiselect__check">✓</span><span>${esc(skill.name)}</span>`;
+            opt.innerHTML = `<span class="multiselect__check"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span><span>${esc(skill.name)}</span>`;
 
             opt.addEventListener('click', (e) => {
                 e.stopPropagation();

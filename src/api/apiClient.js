@@ -1,51 +1,38 @@
-// ── API Client ──────────────────────────────────────────────────────
-// Wrapper centralizado para llamadas HTTP con autenticación JWT.
-
-const BASE_URL = 'http://localhost:3005';
-
-/**
- * Realiza una petición HTTP con headers de autenticación.
- * @param {string} endpoint - Ruta relativa (ej: '/offers')
- * @param {object} options  - Opciones de fetch (method, body, etc.)
- * @returns {Promise<any>}
- */
-export async function fetchApi(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
-
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(error.message || `Error ${response.status}`);
+  if (window.location.hostname === "127.0.0.1") {
+    window.location.href = window.location.href.replace("127.0.0.1", "localhost");
   }
 
-  // 204 No Content
-  if (response.status === 204) return null;
+  export const DEFAULT_BASE_URL = window.location.hostname === "localhost"
+    ? "http://localhost:3005"
+    : "https://matchiq-backend-production.up.railway.app";
 
-  return response.json();
-}
 
-/**
- * Completa el perfil de un candidato.
- * @param {object} profileData - Datos del perfil
- * @returns {Promise<object>}
- */
-export async function completeProfile(profileData) {
-  return fetchApi('/candidate/profile', {
-    method: 'PATCH',
-    body: JSON.stringify(profileData),
-  });
-}
+  export async function apiFetch(path, options = {}) {
+    const url = `${ DEFAULT_BASE_URL }${ path }`;
 
-// Alias para compatibilidad con otros módulos que importan 'apiFetch'
-export { fetchApi as apiFetch };
+    const res = await fetch(url, {
+      credentials: "include", // ← esto envía la cookie automáticamente
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
+      ...options,
+    });
+
+    let data = null;
+    const text = await res.text();
+
+    try { data = text ? JSON.parse(text) : null; } catch { data = text || null; }
+
+    if (!res.ok) {
+      const message =
+        (data && (data.message || data.error)) ||
+        `Request failed (${ res.status })`;
+      const err = new Error(message);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+
+    return data;
+  }

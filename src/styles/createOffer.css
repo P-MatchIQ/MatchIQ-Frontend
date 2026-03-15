@@ -1,15 +1,18 @@
 :root {
-    --bg-900: #021024;
-    --bg-800: #052659;
-    --blue-500: #5483B3;
+    --bg-900: #0f2537;
+    --bg-800: #1a3a5c;
+    --blue-500: #4a7fa8;
+
+    --emerald: #34d399;
+    --emerald-dark: #10b981;
 
     --surface: #ffffff;
     --border: rgba(125, 160, 202, 0.30);
 
-    --text-900: #021024;
-    --text-700: rgba(2, 16, 36, 0.70);
+    --text-900: #0f2537;
+    --text-700: rgba(15, 37, 55, 0.70);
 
-    --shadow: 0 18px 55px rgba(2, 16, 36, 0.10);
+    --shadow: 0 18px 55px rgba(15, 37, 55, 0.10);
     --radius-xl: 22px;
 }
 
@@ -186,7 +189,7 @@ a {
 }
 
 #offer-form button {
-    background: var(--bg-800);
+    background: var(--emerald);
     color: #fff;
     border: none;
     padding: 12px;
@@ -196,7 +199,7 @@ a {
 }
 
 #offer-form button:hover {
-    background: var(--blue-500);
+    background: var(--emerald-dark);
 }
 
 /* Responsive */

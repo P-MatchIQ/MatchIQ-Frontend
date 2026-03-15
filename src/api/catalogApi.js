@@ -1,14 +1,14 @@
 // ── Catalog API ─────────────────────────────────────────────────
 // Categorías y skills del catálogo (backend).
 
-import { fetchApi } from './apiClient.js';
+import { apiFetch } from './apiClient.js';
 
 /**
  * Obtener todas las categorías.
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
 export async function getCategories() {
-    return fetchApi('/catalog/categories');
+    return apiFetch('/catalog/categories');
 }
 
 /**
@@ -17,5 +17,5 @@ export async function getCategories() {
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
 export async function getSkillsByCategory(categoryId) {
-    return fetchApi(`/catalog/categories/${categoryId}/skills`);
+    return apiFetch(`/catalog/categories/${categoryId}/skills`);
 }

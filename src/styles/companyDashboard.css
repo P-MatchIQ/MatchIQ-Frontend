@@ -1,19 +1,22 @@
 :root {
-    --bg-900: #021024;
-    --bg-800: #052659;
-    --blue-500: #5483B3;
-    --blue-300: #7DA0CA;
-    --blue-100: #C1E8FF;
+    --bg-900: #0f2537;
+    --bg-800: #1a3a5c;
+    --blue-500: #4a7fa8;
+    --blue-300: #7ba4c7;
+    --blue-100: #d6eeff;
+
+    --emerald: #34d399;
+    --emerald-dark: #10b981;
 
     --surface: #ffffff;
     --surface-2: rgba(193, 232, 255, 0.12);
     --border: rgba(125, 160, 202, 0.30);
 
-    --text-900: #021024;
-    --text-700: rgba(2, 16, 36, 0.70);
-    --text-600: rgba(2, 16, 36, 0.55);
+    --text-900: #0f2537;
+    --text-700: rgba(15, 37, 55, 0.70);
+    --text-600: rgba(15, 37, 55, 0.55);
 
-    --shadow: 0 18px 55px rgba(2, 16, 36, 0.10);
+    --shadow: 0 18px 55px rgba(15, 37, 55, 0.10);
     --radius-xl: 22px;
     --radius-lg: 16px;
     --radius-md: 12px;
@@ -199,8 +202,8 @@ a {
 
 .btn--primary {
     color: #fff;
-    background: linear-gradient(180deg, var(--bg-800), var(--bg-900));
-    box-shadow: 0 14px 34px rgba(2, 16, 36, 0.16);
+    background: linear-gradient(180deg, var(--emerald), var(--emerald-dark));
+    box-shadow: 0 14px 34px rgba(16, 185, 129, 0.22);
 }
 
 .btn--ghost {
@@ -241,7 +244,7 @@ a {
 }
 
 .kpi--highlight {
-    background: linear-gradient(180deg, var(--blue-500), var(--bg-800));
+    background: linear-gradient(180deg, var(--emerald), var(--emerald-dark));
     border: none;
     color: #fff;
     box-shadow: 0 18px 55px rgba(2, 16, 36, 0.18);
